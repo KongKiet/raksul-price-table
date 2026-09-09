@@ -93,9 +93,10 @@ High-level acceptance criteria:
 - **ID:** T03
 - **Goal:** Implement paper-size selection and Apply, including stale-request protection.
 - **Dependencies:** T02.
-- **Implementation:** TODO
-- **Review:** PENDING
+- **Implementation:** VERIFIED
+- **Review:** DEFERRED
 - **Shipping:** NOT_SHIPPED
+- **Detailed plan:** [T03](tasks/T03.md)
 
 High-level acceptance criteria:
 

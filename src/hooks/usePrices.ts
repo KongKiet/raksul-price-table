@@ -5,6 +5,7 @@ import { fetchPrices, type PaperSize, type PriceResponse } from '../api/prices'
 export const PRICE_LOAD_ERROR = 'We could not load prices. Please try again.'
 
 interface PriceRequestState {
+  paperSize: PaperSize
   data: PriceResponse | null
   error: string | null
   loading: boolean
@@ -12,6 +13,7 @@ interface PriceRequestState {
 
 export function usePrices(paperSize: PaperSize) {
   const [state, setState] = useState<PriceRequestState>({
+    paperSize,
     data: null,
     error: null,
     loading: true,
@@ -25,13 +27,32 @@ export function usePrices(paperSize: PaperSize) {
 
     latestRequestRef.current = requestId
 
+    queueMicrotask(() => {
+      if (
+        latestRequestRef.current === requestId &&
+        !controller.signal.aborted
+      ) {
+        setState({
+          paperSize,
+          data: null,
+          error: null,
+          loading: true,
+        })
+      }
+    })
+
     void fetchPrices(paperSize, controller.signal)
       .then((data) => {
         if (
           latestRequestRef.current === requestId &&
           !controller.signal.aborted
         ) {
-          setState((current) => ({ ...current, data }))
+          setState({
+            paperSize,
+            data,
+            error: null,
+            loading: true,
+          })
         }
       })
       .catch(() => {
@@ -39,7 +60,12 @@ export function usePrices(paperSize: PaperSize) {
           latestRequestRef.current === requestId &&
           !controller.signal.aborted
         ) {
-          setState((current) => ({ ...current, error: PRICE_LOAD_ERROR }))
+          setState({
+            paperSize,
+            data: null,
+            error: PRICE_LOAD_ERROR,
+            loading: true,
+          })
         }
       })
       .finally(() => {
@@ -50,6 +76,7 @@ export function usePrices(paperSize: PaperSize) {
           setState((current) => ({ ...current, loading: false }))
         }
       })
+
     return () => {
       latestRequestRef.current += 1
       controller.abort()
@@ -58,15 +85,28 @@ export function usePrices(paperSize: PaperSize) {
 
   const retry = useCallback(() => {
     setState({
+      paperSize,
       data: null,
       error: null,
       loading: true,
     })
     setRequestVersion((version) => version + 1)
-  }, [])
+  }, [paperSize])
+
+  const visibleState =
+    state.paperSize === paperSize
+      ? state
+      : {
+          paperSize,
+          data: null,
+          error: null,
+          loading: true,
+        }
 
   return {
-    ...state,
+    data: visibleState.data,
+    error: visibleState.error,
+    loading: visibleState.loading,
     retry,
   }
 }

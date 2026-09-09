@@ -3,7 +3,7 @@ import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { PriceResponse } from './api/prices'
+import type { PaperSize, PriceResponse } from './api/prices'
 import { fetchPrices } from './api/prices'
 import App from './App'
 
@@ -34,6 +34,23 @@ function createPrices(): PriceResponse {
   }
 }
 
+function createPricesFor(
+  paperSize: PaperSize,
+  firstPrice = 1_000,
+): PriceResponse {
+  const response = createPrices()
+  response.paper_size = paperSize
+  const oneDayEntry = response.prices[0]?.find(
+    (entry) => entry.business_day === 1,
+  )
+
+  if (oneDayEntry) {
+    oneDayEntry.price = firstPrice
+  }
+
+  return response
+}
+
 function deferred<T>() {
   let resolve!: (value: T) => void
   let reject!: (reason?: unknown) => void
@@ -43,6 +60,21 @@ function deferred<T>() {
   })
 
   return { promise, reject, resolve }
+}
+
+async function selectPaperSize(
+  user: ReturnType<typeof userEvent.setup>,
+  paperSize: PaperSize,
+) {
+  await user.selectOptions(screen.getByLabelText('Paper size'), paperSize)
+}
+
+async function applyPaperSize(
+  user: ReturnType<typeof userEvent.setup>,
+  paperSize: PaperSize,
+) {
+  await selectPaperSize(user, paperSize)
+  await user.click(screen.getByRole('button', { name: 'Apply' }))
 }
 
 beforeEach(() => {
@@ -152,6 +184,241 @@ describe('App', () => {
     expect(fetchPricesMock).toHaveBeenCalledTimes(2)
   })
 
+  it('offers exactly the four supported paper sizes', () => {
+    fetchPricesMock.mockReturnValue(new Promise<PriceResponse>(() => {}))
+
+    render(<App />)
+
+    const selector = screen.getByRole('combobox', { name: 'Paper size' })
+    expect(selector).toHaveValue('A4')
+    expect(
+      within(selector)
+        .getAllByRole('option')
+        .map((option) => option.textContent),
+    ).toEqual(['A4', 'A5', 'B4', 'B5'])
+  })
+
+  it('keeps a draft selection separate from the applied table', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    await screen.findByRole('table', { name: 'A4 price table' })
+    await selectPaperSize(user, 'A5')
+
+    expect(screen.getByLabelText('Paper size')).toHaveValue('A5')
+    expect(
+      screen.getByRole('heading', { name: 'A4 price table' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('table', { name: 'A5 price table' })).toBeNull()
+    expect(fetchPricesMock).toHaveBeenCalledTimes(1)
+  })
+
+  it.each<PaperSize>(['A5', 'B4', 'B5'])(
+    'applies %s with immediate clean loading and dynamic labels',
+    async (paperSize) => {
+      const user = userEvent.setup()
+      const nextRequest = deferred<PriceResponse>()
+      fetchPricesMock
+        .mockResolvedValueOnce(createPrices())
+        .mockReturnValueOnce(nextRequest.promise)
+
+      render(<App />)
+
+      await screen.findByRole('table', { name: 'A4 price table' })
+      await applyPaperSize(user, paperSize)
+
+      expect(screen.getByRole('status')).toHaveTextContent(
+        `Loading ${paperSize} prices`,
+      )
+      expect(screen.queryByRole('table')).not.toBeInTheDocument()
+      expect(
+        screen.getByRole('heading', { name: `${paperSize} price table` }),
+      ).toBeInTheDocument()
+      expect(fetchPricesMock).toHaveBeenLastCalledWith(
+        paperSize,
+        expect.any(AbortSignal),
+      )
+
+      await act(async () => {
+        nextRequest.resolve(createPricesFor(paperSize, 11_000))
+      })
+
+      const table = await screen.findByRole('table', {
+        name: `${paperSize} price table`,
+      })
+      expect(within(table).getAllByRole('rowheader')).toHaveLength(5)
+      expect(fetchPricesMock).toHaveBeenCalledTimes(2)
+    },
+  )
+
+  it('does not request again when Apply keeps the current size', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    await screen.findByRole('table')
+    await user.click(screen.getByRole('button', { name: 'Apply' }))
+
+    expect(fetchPricesMock).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('table', { name: 'A4 price table' })).toBeVisible()
+  })
+
+  it('submits the selected size with the keyboard', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock
+      .mockResolvedValueOnce(createPrices())
+      .mockResolvedValueOnce(createPricesFor('A5'))
+
+    render(<App />)
+
+    await screen.findByRole('table')
+    await selectPaperSize(user, 'A5')
+    screen.getByRole('button', { name: 'Apply' }).focus()
+    await user.keyboard('{Enter}')
+
+    expect(
+      await screen.findByRole('table', { name: 'A5 price table' }),
+    ).toBeInTheDocument()
+    expect(fetchPricesMock).toHaveBeenLastCalledWith(
+      'A5',
+      expect.any(AbortSignal),
+    )
+  })
+
+  it('retries the applied size rather than an unapplied draft', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock
+      .mockResolvedValueOnce(createPrices())
+      .mockRejectedValueOnce(new Error('A5 unavailable'))
+      .mockResolvedValueOnce(createPricesFor('A5'))
+
+    render(<App />)
+
+    await screen.findByRole('table')
+    await applyPaperSize(user, 'A5')
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+
+    await selectPaperSize(user, 'B4')
+    await user.click(screen.getByRole('button', { name: 'Retry' }))
+
+    expect(
+      await screen.findByRole('table', { name: 'A5 price table' }),
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText('Paper size')).toHaveValue('B4')
+    expect(fetchPricesMock).toHaveBeenLastCalledWith(
+      'A5',
+      expect.any(AbortSignal),
+    )
+  })
+
+  it('ignores stale success and completion from an older applied size', async () => {
+    const user = userEvent.setup()
+    const staleRequest = deferred<PriceResponse>()
+    const currentRequest = deferred<PriceResponse>()
+    fetchPricesMock
+      .mockResolvedValueOnce(createPrices())
+      .mockReturnValueOnce(staleRequest.promise)
+      .mockReturnValueOnce(currentRequest.promise)
+
+    render(<App />)
+
+    await screen.findByRole('table')
+    await applyPaperSize(user, 'A5')
+    await waitFor(() => expect(fetchPricesMock).toHaveBeenCalledTimes(2))
+    await applyPaperSize(user, 'B4')
+    await waitFor(() => expect(fetchPricesMock).toHaveBeenCalledTimes(3))
+
+    expect(fetchPricesMock.mock.calls[1][1].aborted).toBe(true)
+
+    await act(async () => {
+      staleRequest.resolve(createPricesFor('A5', 901_000))
+    })
+
+    expect(screen.getByRole('status')).toHaveTextContent('Loading B4 prices')
+    expect(screen.queryByText('901,000')).not.toBeInTheDocument()
+
+    await act(async () => {
+      currentRequest.resolve(createPricesFor('B4', 21_000))
+    })
+
+    expect(
+      await screen.findByRole('table', { name: 'B4 price table' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('21,000')).toBeInTheDocument()
+    expect(screen.queryByText('901,000')).not.toBeInTheDocument()
+  })
+
+  it('ignores stale failure and completion from an older applied size', async () => {
+    const user = userEvent.setup()
+    const staleRequest = deferred<PriceResponse>()
+    const currentRequest = deferred<PriceResponse>()
+    fetchPricesMock
+      .mockResolvedValueOnce(createPrices())
+      .mockReturnValueOnce(staleRequest.promise)
+      .mockReturnValueOnce(currentRequest.promise)
+
+    render(<App />)
+
+    await screen.findByRole('table')
+    await applyPaperSize(user, 'A5')
+    await applyPaperSize(user, 'B5')
+    await waitFor(() => expect(fetchPricesMock).toHaveBeenCalledTimes(3))
+
+    await act(async () => {
+      staleRequest.reject(new Error('late A5 failure'))
+    })
+
+    expect(screen.getByRole('status')).toHaveTextContent('Loading B5 prices')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+
+    await act(async () => {
+      currentRequest.resolve(createPricesFor('B5', 31_000))
+    })
+
+    expect(
+      await screen.findByRole('table', { name: 'B5 price table' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('clears an old error immediately when another size is applied', async () => {
+    const user = userEvent.setup()
+    const nextRequest = deferred<PriceResponse>()
+    fetchPricesMock
+      .mockRejectedValueOnce(new Error('A4 unavailable'))
+      .mockReturnValueOnce(nextRequest.promise)
+
+    render(<App />)
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    await applyPaperSize(user, 'A5')
+
+    expect(screen.getByRole('status')).toHaveTextContent('Loading A5 prices')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+
+    await act(async () => {
+      nextRequest.resolve(createPricesFor('A5'))
+    })
+  })
+
+  it('uses the applied size in an empty-state message', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock
+      .mockResolvedValueOnce(createPrices())
+      .mockResolvedValueOnce({ paper_size: 'B4', prices: [] })
+
+    render(<App />)
+
+    await screen.findByRole('table')
+    await applyPaperSize(user, 'B4')
+
+    expect(
+      await screen.findByText('No prices are currently available for B4.'),
+    ).toHaveAttribute('role', 'status')
+  })
   it('ignores stale success and completion from an aborted request', async () => {
     const staleRequest = deferred<PriceResponse>()
     const currentRequest = deferred<PriceResponse>()

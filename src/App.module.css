@@ -37,6 +37,63 @@
   font-size: 1.05rem;
 }
 
+.controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+}
+
+.label {
+  color: var(--text-strong);
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.select {
+  min-width: 160px;
+  min-height: 44px;
+  padding: 9px 36px 9px 13px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  color: var(--text-strong);
+  background: var(--surface);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.select:hover {
+  border-color: var(--accent);
+}
+
+.select:focus-visible,
+.applyButton:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.applyButton {
+  min-height: 44px;
+  padding: 10px 20px;
+  border: 0;
+  border-radius: 10px;
+  color: white;
+  background: var(--accent);
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.applyButton:hover {
+  background: var(--accent-hover);
+}
+
 .panel {
   padding: 28px;
   border: 1px solid var(--border);
@@ -139,6 +196,23 @@
 
   .intro {
     margin-bottom: 26px;
+  }
+
+  .controls {
+    align-items: stretch;
+  }
+
+  .field {
+    flex: 1 1 auto;
+  }
+
+  .select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .applyButton {
+    align-self: end;
   }
 
   .panel {

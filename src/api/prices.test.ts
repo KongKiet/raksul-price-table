@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { fetchPrices } from './prices'
+import { fetchPrices, type PaperSize } from './prices'
 
 function responseWith(
   body: unknown,
@@ -53,6 +53,29 @@ describe('fetchPrices', () => {
       { signal: controller.signal },
     )
   })
+
+  it.each<PaperSize>(['A5', 'B4', 'B5'])(
+    'requests the supported %s paper size',
+    async (paperSize) => {
+      const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+        responseWith({
+          paper_size: paperSize.toLowerCase(),
+          prices: [],
+        }),
+      )
+      vi.stubGlobal('fetch', fetchMock)
+      const controller = new AbortController()
+
+      await expect(fetchPrices(paperSize, controller.signal)).resolves.toEqual({
+        paper_size: paperSize,
+        prices: [],
+      })
+      expect(fetchMock).toHaveBeenCalledWith(
+        `https://us-central1-fe-ws-test.cloudfunctions.net/prices?paper_size=${paperSize}`,
+        { signal: controller.signal },
+      )
+    },
+  )
 
   it('rejects a non-successful HTTP response', async () => {
     vi.stubGlobal(

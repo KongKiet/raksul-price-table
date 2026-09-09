@@ -1,10 +1,29 @@
+import { useState, type FormEvent } from 'react'
+
+import { type PaperSize } from './api/prices'
 import { PriceTable } from './components/PriceTable/PriceTable'
 import { usePrices } from './hooks/usePrices'
 import styles from './App.module.css'
 
+const PAPER_SIZES: readonly PaperSize[] = ['A4', 'A5', 'B4', 'B5']
+
+function isPaperSize(value: string): value is PaperSize {
+  return PAPER_SIZES.some((paperSize) => paperSize === value)
+}
+
 function App() {
-  const { data, error, loading, retry } = usePrices('A4')
+  const [draftPaperSize, setDraftPaperSize] = useState<PaperSize>('A4')
+  const [appliedPaperSize, setAppliedPaperSize] = useState<PaperSize>('A4')
+  const { data, error, loading, retry } = usePrices(appliedPaperSize)
   const hasPrices = data?.prices.some((row) => row.length > 0) ?? false
+
+  function applyPaperSize(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (draftPaperSize !== appliedPaperSize) {
+      setAppliedPaperSize(draftPaperSize)
+    }
+  }
 
   return (
     <main className={styles.page}>
@@ -17,6 +36,33 @@ function App() {
           </p>
         </header>
 
+        <form className={styles.controls} onSubmit={applyPaperSize}>
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="paper-size">
+              Paper size
+            </label>
+            <select
+              className={styles.select}
+              id="paper-size"
+              value={draftPaperSize}
+              onChange={(event) => {
+                if (isPaperSize(event.target.value)) {
+                  setDraftPaperSize(event.target.value)
+                }
+              }}
+            >
+              {PAPER_SIZES.map((paperSize) => (
+                <option key={paperSize} value={paperSize}>
+                  {paperSize}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button className={styles.applyButton} type="submit">
+            Apply
+          </button>
+        </form>
+
         <section
           className={styles.panel}
           aria-labelledby="price-table-heading"
@@ -25,20 +71,20 @@ function App() {
           <div className={styles.panelHeader}>
             <div>
               <h2 className={styles.panelTitle} id="price-table-heading">
-                A4 price table
+                {appliedPaperSize} price table
               </h2>
               <p className={styles.panelDescription}>
                 Prices by quantity and delivery business days
               </p>
             </div>
-            <span className={styles.paperBadge}>A4</span>
+            <span className={styles.paperBadge}>{appliedPaperSize}</span>
           </div>
 
           {loading && (
             <div className={styles.state} role="status" aria-live="polite">
               <div className={styles.stateContent}>
                 <span className={styles.spinner} aria-hidden="true" />
-                <span>Loading A4 prices...</span>
+                <span>Loading {appliedPaperSize} prices...</span>
               </div>
             </div>
           )}
@@ -60,12 +106,12 @@ function App() {
 
           {!loading && !error && data && !hasPrices && (
             <p className={styles.state} role="status">
-              No prices are currently available for A4.
+              No prices are currently available for {appliedPaperSize}.
             </p>
           )}
 
           {!loading && !error && data && hasPrices && (
-            <PriceTable paperSize="A4" prices={data.prices} />
+            <PriceTable paperSize={appliedPaperSize} prices={data.prices} />
           )}
         </section>
       </div>
