@@ -1,0 +1,170 @@
+# Project task index
+
+## Context and sources
+
+Build an interactive price table for paper printing products, organized by delivery business days and quantity, with A4, A5, B4, and B5 paper sizes.
+
+- [`../AGENTS.md`](../AGENTS.md) defines project instructions, restrictions, verification, and handoff rules.
+- [`assignment.md`](assignment.md) defines product requirements and the API contract.
+- [`decisions.md`](decisions.md) records the selected stack and implementation assumptions, including Apply behavior and scope boundaries.
+- Use the reference image at the path documented in the assignment when available. It is currently missing from the repository.
+
+Acceptance criteria below include both assignment requirements and the separately documented implementation decisions; they do not alter the assignment. Do not silently change requirements to match implementation.
+
+## Task workflow and evidence
+
+Default workflow: plan → implement and verify → commit/push when authorized → final consolidated review. Individual task reviews remain available but are optional.
+
+Track three independent fields:
+
+| Field          | Values                                          | Meaning                                                                                                                                                     |
+| -------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Implementation | `TODO` → `PLANNED` → `IN_PROGRESS` → `VERIFIED` | `VERIFIED` means the implementation satisfies its acceptance criteria and required verification, including diff inspection. It is not a review result.      |
+| Review         | `PENDING`, `DEFERRED`, or `REVIEWED`            | `DEFERRED` means the separate task review was intentionally postponed to the final consolidated review. Only an actual completed review may use `REVIEWED`. |
+| Shipping       | `NOT_SHIPPED` → `COMMITTED` → `SHIPPED`         | `COMMITTED` means an authorized commit exists but has not been confirmed pushed. `SHIPPED` means pushed, not merged or deployed.                            |
+
+A task may ship with review `DEFERRED` when implementation is `VERIFIED`, required evidence covers the current source, and no failing check or known blocking defect remains. Keep truthful review history, including T00's completed review. A later source change may make prior evidence stale, but does not erase the historical record.
+
+Detailed plans live in `docs/tasks/*.md`, using `docs/tasks/<ID>.md` for each task, such as `docs/tasks/T00.md`. No detailed task plans are created by this index.
+
+This index and the assignment must provide enough context for `task-plan` to accept only a task ID. Planning should resolve the ID here, read the linked instructions and decisions, inspect current code and dependency-task evidence, and create or update the corresponding detailed task document. It must not require undocumented conversation history. The repository skills live in `.agents/skills/<skill-name>/SKILL.md`, using repository-root paths: `task-plan`, `task-build`, `task-review`, and `task-ship`.
+
+Record progress, review findings or explicit deferral, resolutions, verification commands and results, limitations, and remaining manual checks in the detailed task document. Keep the index concise and update implementation, review, and shipping fields independently. Dependencies identify prerequisite capabilities; they do not authorize implementation, commits, or pushes.
+
+Record commit and push outcomes separately. After an authorized commit, record its hash and use shipping `COMMITTED` until the authorized push succeeds. Only then use `SHIPPED` and record the destination remote and branch plus push confirmation. Evidence may remain as a local documentation update until the next authorized commit; do not create repeated bookkeeping commits merely to record the commit containing shipping evidence. Refer to the shipped implementation commit rather than trying to make an evidence commit record its own hash.
+
+## Shared acceptance expectations
+
+All tasks follow `AGENTS.md`, use the selected stack, preserve unrelated work, and document material assumptions separately from requirements. Tests cover observable behavior and meaningful edge cases using controlled data, without depending on the live API; the formatter's unit tests remain mandatory. Implementation verification checks acceptance criteria and the task diff and obtains current-source evidence for appropriate tests, lint, formatting checks, and the production build. Visual and interaction changes require real-browser verification in the latest Chrome or Firefox before shipping. Valid evidence may be reused for unchanged source; affected, stale, missing, or failing checks must run and be reported accurately.
+
+## T00 — Development tooling and test configuration
+
+- **ID:** T00
+- **Goal:** Verify and complete development tooling and test configuration.
+- **Dependencies:** None.
+- **Implementation:** VERIFIED
+- **Review:** REVIEWED
+- **Shipping:** COMMITTED
+- **Detailed plan:** [T00](tasks/T00.md)
+
+High-level acceptance criteria:
+
+- Verify the existing setup and complete React, TypeScript strict mode, Vite, CSS Modules support, npm, ESLint, and Prettier configuration without replacing unrelated user work.
+- Configure Vitest, React Testing Library, user-event, jest-dom, and jsdom for isolated unit and component tests.
+- Provide usable commands for development, formatting checks, lint, tests, and production builds; verify applicable commands and report accurately if no tests exist yet.
+- Ensure ignore rules cover dependencies, build output, coverage, and local environment files; record runtime or Git environment blockers.
+
+## T01 — Price formatter
+
+- **ID:** T01
+- **Goal:** Implement the price formatter and unit tests.
+- **Dependencies:** T00.
+- **Implementation:** TODO
+- **Review:** PENDING
+- **Shipping:** NOT_SHIPPED
+
+High-level acceptance criteria:
+
+- Format positive integer prices with commas between groups of three digits counted from the right.
+- Do not use `toLocaleString()`, `Intl.NumberFormat()`, or utility libraries.
+- Unit tests cover values requiring no separator, digit-group boundaries, and multiple separators.
+
+## T02 — Initial A4 price table
+
+- **ID:** T02
+- **Goal:** Load and display the A4 price table, including loading, error, retry, and empty states.
+- **Dependencies:** T00, T01.
+- **Implementation:** TODO
+- **Review:** PENDING
+- **Shipping:** NOT_SHIPPED
+
+High-level acceptance criteria:
+
+- Request A4 from the documented production API using native Fetch with AbortController, with API access separated from presentation and stale updates prevented.
+- Display formatted prices by quantity and delivery business days using semantic HTML and CSS Modules, initially showing five quantity rows from the loaded response.
+- Derive business-day columns from the response, sort numerically, and match entries by `business_day` rather than array position; show missing combinations as unavailable.
+- Provide observable loading, error, retry, and empty states. Retry can recover from failure, and production failures never silently fall back to mock data.
+- Automated tests verify these states and table mapping without live API requests.
+
+## T03 — Paper-size selection and Apply
+
+- **ID:** T03
+- **Goal:** Implement paper-size selection and Apply, including stale-request protection.
+- **Dependencies:** T02.
+- **Implementation:** TODO
+- **Review:** PENDING
+- **Shipping:** NOT_SHIPPED
+
+High-level acceptance criteria:
+
+- Offer A4, A5, B4, and B5 through an accessible selector with A4 initially selected.
+- Changing the dropdown alone leaves the applied table unchanged; Apply applies the selected size.
+- Changing the applied size resets the visible row count to five. Selection and hover must clear when those features are added in T04 and T06; T05 verifies the reset after expansion.
+- Superseded requests cannot update current data, loading, or error state, including delayed success, failure, and completion paths.
+- Tests cover Apply behavior, supported sizes, and overlapping requests using controlled responses.
+
+## T04 — Cell selection and Order price
+
+- **ID:** T04
+- **Goal:** Implement cell selection and Order price.
+- **Dependencies:** T03.
+- **Implementation:** TODO
+- **Review:** PENDING
+- **Shipping:** NOT_SHIPPED
+
+High-level acceptance criteria:
+
+- Selecting an available cell by pointer or keyboard keeps it highlighted and identifies it by `quantity` and `business_day`.
+- Order price displays an em dash before selection and otherwise derives the formatted selected price from current data, without multiplying by quantity.
+- Missing combinations cannot be selected; changing the applied paper size clears selection and returns Order price to an em dash.
+- Tests verify selection, replacement selection, unavailable cells, and applied-size resets.
+
+## T05 — See more
+
+- **ID:** T05
+- **Goal:** Implement See more.
+- **Dependencies:** T03.
+- **Implementation:** TODO
+- **Review:** PENDING
+- **Shipping:** NOT_SHIPPED
+
+High-level acceptance criteria:
+
+- Initially show five quantity rows; See more reveals all available loaded rows, including all ten rows in the specified response.
+- Expansion does not request another page or otherwise fetch more data.
+- Changing the applied paper size resets the table to five rows.
+- The control is accessible, and tests verify expansion, request count, and reset behavior.
+
+## T06 — Hover highlighting
+
+- **ID:** T06
+- **Goal:** Implement cell, row, and column hover highlighting.
+- **Dependencies:** T04, T05.
+- **Implementation:** TODO
+- **Review:** PENDING
+- **Shipping:** NOT_SHIPPED
+
+High-level acceptance criteria:
+
+- Hovering over an available price strongly highlights its cell and weakly highlights the corresponding quantity row and business-day column.
+- Hover remains separate from persistent selection; moving or leaving the pointer does not change the selected price or remove its selected state.
+- Highlighting works across expanded rows and matches cell identity rather than entry position.
+- Changing the applied paper size clears hover; tests cover highlight transitions and interaction with selection.
+
+## T07 — Accessibility, regression verification, browser QA, and README
+
+- **ID:** T07
+- **Goal:** Complete accessibility checks, regression verification, browser QA, and README.
+- **Dependencies:** T00, T01, T02, T03, T04, T05, T06.
+- **Implementation:** TODO
+- **Review:** PENDING
+- **Shipping:** NOT_SHIPPED
+
+High-level acceptance criteria:
+
+- Verify semantic table structure, accessible control names, keyboard operation, visible focus, and understandable loading, error, empty, and selection states.
+- Regression checks cover formatter behavior, table mapping, Apply and stale requests, selection and Order price, See more, and hover interactions together.
+- Run formatting checks, lint, tests, and the production build; record results and resolve blocking failures without weakening checks.
+- Perform browser QA in the latest Chrome or Firefox when available and compare against the documented visual reference when available. Record browser/version and findings, or the manual verification still needed and missing reference limitation.
+- Update README with setup and workflow commands, product behavior, relevant assumptions, verification guidance, and known limitations while preserving applicable existing content.
+- Confirm Cart behavior remains unspecified and checkout, routing, a global store, and a backend remain outside scope.
