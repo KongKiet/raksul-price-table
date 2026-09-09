@@ -75,9 +75,10 @@ High-level acceptance criteria:
 - **ID:** T02
 - **Goal:** Load and display the A4 price table, including loading, error, retry, and empty states.
 - **Dependencies:** T00, T01.
-- **Implementation:** TODO
-- **Review:** PENDING
+- **Implementation:** VERIFIED
+- **Review:** DEFERRED
 - **Shipping:** NOT_SHIPPED
+- **Detailed plan:** [T02](tasks/T02.md)
 
 High-level acceptance criteria:
 
