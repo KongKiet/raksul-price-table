@@ -59,9 +59,10 @@ High-level acceptance criteria:
 - **ID:** T01
 - **Goal:** Implement the price formatter and unit tests.
 - **Dependencies:** T00.
-- **Implementation:** TODO
-- **Review:** PENDING
+- **Implementation:** VERIFIED
+- **Review:** DEFERRED
 - **Shipping:** NOT_SHIPPED
+- **Detailed plan:** [T01](tasks/T01.md)
 
 High-level acceptance criteria:
 
