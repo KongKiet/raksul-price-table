@@ -26,3 +26,8 @@ coverage/
 *.njsproj
 *.sln
 *.sw?
+
+# Local-only project docs and agent workflow files (kept locally, not tracked)
+/docs/
+/.agents/
+/.tmp/
