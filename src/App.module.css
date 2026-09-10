@@ -130,6 +130,33 @@
   font-weight: 800;
 }
 
+.panelSummary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.orderPrice {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+.orderPriceLabel {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.orderPriceValue {
+  color: var(--text-strong);
+  font-size: 1.15rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
 .state {
   display: grid;
   min-height: 300px;
@@ -222,5 +249,15 @@
 
   .panelHeader {
     align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .panelSummary {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .orderPrice {
+    justify-items: start;
   }
 }

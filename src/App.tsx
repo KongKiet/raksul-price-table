@@ -1,8 +1,12 @@
 import { useState, type FormEvent } from 'react'
 
 import { type PaperSize } from './api/prices'
-import { PriceTable } from './components/PriceTable/PriceTable'
+import {
+  PriceTable,
+  type PriceCellIdentity,
+} from './components/PriceTable/PriceTable'
 import { usePrices } from './hooks/usePrices'
+import { formatPrice } from './utils/formatPrice'
 import styles from './App.module.css'
 
 const PAPER_SIZES: readonly PaperSize[] = ['A4', 'A5', 'B4', 'B5']
@@ -14,13 +18,24 @@ function isPaperSize(value: string): value is PaperSize {
 function App() {
   const [draftPaperSize, setDraftPaperSize] = useState<PaperSize>('A4')
   const [appliedPaperSize, setAppliedPaperSize] = useState<PaperSize>('A4')
+  const [selectedCell, setSelectedCell] = useState<PriceCellIdentity | null>(
+    null,
+  )
   const { data, error, loading, retry } = usePrices(appliedPaperSize)
   const hasPrices = data?.prices.some((row) => row.length > 0) ?? false
+  const selectedPrice = data?.prices
+    .flatMap((row) => row)
+    .find(
+      (entry) =>
+        entry.quantity === selectedCell?.quantity &&
+        entry.business_day === selectedCell.businessDay,
+    )?.price
 
   function applyPaperSize(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     if (draftPaperSize !== appliedPaperSize) {
+      setSelectedCell(null)
       setAppliedPaperSize(draftPaperSize)
     }
   }
@@ -77,7 +92,23 @@ function App() {
                 Prices by quantity and delivery business days
               </p>
             </div>
-            <span className={styles.paperBadge}>{appliedPaperSize}</span>
+            <div className={styles.panelSummary}>
+              <div className={styles.orderPrice}>
+                <span className={styles.orderPriceLabel} id="order-price-label">
+                  Order price
+                </span>
+                <span
+                  className={styles.orderPriceValue}
+                  aria-labelledby="order-price-label"
+                  aria-live="polite"
+                >
+                  {selectedPrice === undefined
+                    ? '\u2014'
+                    : formatPrice(selectedPrice)}
+                </span>
+              </div>
+              <span className={styles.paperBadge}>{appliedPaperSize}</span>
+            </div>
           </div>
 
           {loading && (
@@ -111,7 +142,12 @@ function App() {
           )}
 
           {!loading && !error && data && hasPrices && (
-            <PriceTable paperSize={appliedPaperSize} prices={data.prices} />
+            <PriceTable
+              paperSize={appliedPaperSize}
+              prices={data.prices}
+              selectedCell={selectedCell}
+              onSelect={setSelectedCell}
+            />
           )}
         </section>
       </div>

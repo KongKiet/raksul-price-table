@@ -111,9 +111,10 @@ High-level acceptance criteria:
 - **ID:** T04
 - **Goal:** Implement cell selection and Order price.
 - **Dependencies:** T03.
-- **Implementation:** TODO
-- **Review:** PENDING
+- **Implementation:** VERIFIED
+- **Review:** DEFERRED
 - **Shipping:** NOT_SHIPPED
+- **Detailed plan:** [T04](tasks/T04.md)
 
 High-level acceptance criteria:
 

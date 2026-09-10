@@ -77,6 +77,17 @@ async function applyPaperSize(
   await user.click(screen.getByRole('button', { name: 'Apply' }))
 }
 
+function getOrderPrice() {
+  const label = screen.getByText('Order price')
+  const orderPrice = label.parentElement
+
+  if (!orderPrice) {
+    throw new Error('Order price container is missing')
+  }
+
+  return orderPrice
+}
+
 beforeEach(() => {
   fetchPricesMock.mockReset()
 })
@@ -137,6 +148,152 @@ describe('App', () => {
         .map((cell) => cell.textContent),
     ).toEqual(['1,500', '—Unavailable', '1,300'])
     expect(fetchPricesMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('starts without a selection and derives Order price from the selected cell', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    const orderPrice = getOrderPrice()
+    expect(orderPrice).toHaveTextContent('\u2014')
+
+    const firstPrice = await screen.findByRole('button', {
+      name: 'Select 1,000, quantity 10, 1 business day',
+    })
+    await user.click(firstPrice)
+
+    expect(firstPrice).toHaveAttribute('aria-pressed', 'true')
+    expect(orderPrice).toHaveTextContent('1,000')
+    expect(fetchPricesMock).toHaveBeenCalledTimes(1)
+
+    const replacement = screen.getByRole('button', {
+      name: 'Select 2,000, quantity 30, 2 business days',
+    })
+    await user.click(replacement)
+    await user.click(replacement)
+
+    expect(firstPrice).toHaveAttribute('aria-pressed', 'false')
+    expect(replacement).toHaveAttribute('aria-pressed', 'true')
+    expect(orderPrice).toHaveTextContent('2,000')
+  })
+
+  it('supports native keyboard selection with Enter and Space', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    const firstPrice = await screen.findByRole('button', {
+      name: 'Select 900, quantity 10, 2 business days',
+    })
+    firstPrice.focus()
+    await user.keyboard('{Enter}')
+    expect(firstPrice).toHaveAttribute('aria-pressed', 'true')
+
+    const secondPrice = screen.getByRole('button', {
+      name: 'Select 1,300, quantity 20, 3 business days',
+    })
+    secondPrice.focus()
+    await user.keyboard(' ')
+
+    expect(firstPrice).toHaveAttribute('aria-pressed', 'false')
+    expect(secondPrice).toHaveAttribute('aria-pressed', 'true')
+    expect(getOrderPrice()).toHaveTextContent('1,300')
+  })
+
+  it('keeps equal prices distinct by quantity and business day', async () => {
+    const user = userEvent.setup()
+    const response = createPrices()
+    response.prices[1][0].price = 1_000
+    fetchPricesMock.mockResolvedValue(response)
+
+    render(<App />)
+
+    const duplicatePrices = await screen.findAllByRole('button', {
+      name: /Select 1,000/,
+    })
+    expect(duplicatePrices).toHaveLength(2)
+
+    await user.click(duplicatePrices[1])
+
+    expect(duplicatePrices[0]).toHaveAttribute('aria-pressed', 'false')
+    expect(duplicatePrices[1]).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('leaves missing combinations unavailable and noninteractive', async () => {
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    const table = await screen.findByRole('table')
+    const sparseRow = within(table)
+      .getByRole('rowheader', { name: '20' })
+      .closest('tr')
+
+    expect(sparseRow).not.toBeNull()
+    expect(
+      within(sparseRow as HTMLTableRowElement).getByText('Unavailable'),
+    ).toBeInTheDocument()
+    expect(
+      within(sparseRow as HTMLTableRowElement).getAllByRole('button'),
+    ).toHaveLength(2)
+    expect(getOrderPrice()).toHaveTextContent('\u2014')
+  })
+
+  it('preserves selection for draft and same-size Apply changes', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    const price = await screen.findByRole('button', {
+      name: 'Select 1,000, quantity 10, 1 business day',
+    })
+    await user.click(price)
+    await selectPaperSize(user, 'A5')
+
+    expect(price).toHaveAttribute('aria-pressed', 'true')
+    expect(getOrderPrice()).toHaveTextContent('1,000')
+
+    await selectPaperSize(user, 'A4')
+    await user.click(screen.getByRole('button', { name: 'Apply' }))
+
+    expect(price).toHaveAttribute('aria-pressed', 'true')
+    expect(fetchPricesMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('clears selection immediately when a different size is applied', async () => {
+    const user = userEvent.setup()
+    const nextRequest = deferred<PriceResponse>()
+    fetchPricesMock
+      .mockResolvedValueOnce(createPrices())
+      .mockReturnValueOnce(nextRequest.promise)
+
+    render(<App />)
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Select 1,000, quantity 10, 1 business day',
+      }),
+    )
+    await applyPaperSize(user, 'A5')
+
+    expect(getOrderPrice()).toHaveTextContent('\u2014')
+    expect(screen.queryByRole('button', { pressed: true })).toBeNull()
+
+    await act(async () => {
+      nextRequest.resolve(createPricesFor('A5', 11_000))
+    })
+
+    const nextTable = await screen.findByRole('table', {
+      name: 'A5 price table',
+    })
+    expect(
+      within(nextTable).queryByRole('button', { pressed: true }),
+    ).toBeNull()
+    expect(getOrderPrice()).toHaveTextContent('\u2014')
   })
 
   it('renders all rows when fewer than five are available', async () => {

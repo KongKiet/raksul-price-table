@@ -87,6 +87,39 @@
   font-weight: 700;
 }
 
+.table td.available {
+  padding: 0;
+}
+
+.priceButton {
+  width: 100%;
+  min-height: 58px;
+  padding: 18px 20px;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.priceButton:hover {
+  background: var(--accent-soft);
+}
+
+.priceButton[aria-pressed='true'] {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 3px var(--accent);
+}
+
+.priceButton:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 3px solid var(--focus);
+  outline-offset: -5px;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+}
+
 .table td.unavailable {
   color: var(--text-faint);
   font-weight: 500;
@@ -112,6 +145,11 @@
   .table th,
   .table td {
     min-width: 104px;
+    padding: 15px 16px;
+  }
+
+  .priceButton {
+    min-height: 51px;
     padding: 15px 16px;
   }
 }

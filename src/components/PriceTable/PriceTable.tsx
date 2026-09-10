@@ -5,6 +5,13 @@ import styles from './PriceTable.module.css'
 interface PriceTableProps {
   paperSize: string
   prices: PriceRow[]
+  selectedCell: PriceCellIdentity | null
+  onSelect: (cell: PriceCellIdentity) => void
+}
+
+export interface PriceCellIdentity {
+  quantity: number
+  businessDay: number
 }
 
 function getBusinessDays(prices: PriceRow[]): number[] {
@@ -13,7 +20,12 @@ function getBusinessDays(prices: PriceRow[]): number[] {
   ].sort((first, second) => first - second)
 }
 
-export function PriceTable({ paperSize, prices }: PriceTableProps) {
+export function PriceTable({
+  paperSize,
+  prices,
+  selectedCell,
+  onSelect,
+}: PriceTableProps) {
   const rows = prices.filter((row) => row.length > 0).slice(0, 5)
   const businessDays = getBusinessDays(prices)
 
@@ -51,11 +63,22 @@ export function PriceTable({ paperSize, prices }: PriceTableProps) {
 
                   return (
                     <td
-                      className={entry ? undefined : styles.unavailable}
+                      className={entry ? styles.available : styles.unavailable}
                       key={businessDay}
                     >
                       {entry ? (
-                        formatPrice(entry.price)
+                        <button
+                          className={styles.priceButton}
+                          type="button"
+                          aria-label={`Select ${formatPrice(entry.price)}, quantity ${formatPrice(quantity)}, ${businessDay} business ${businessDay === 1 ? 'day' : 'days'}`}
+                          aria-pressed={
+                            selectedCell?.quantity === quantity &&
+                            selectedCell.businessDay === businessDay
+                          }
+                          onClick={() => onSelect({ quantity, businessDay })}
+                        >
+                          {formatPrice(entry.price)}
+                        </button>
                       ) : (
                         <>
                           <span aria-hidden="true">&mdash;</span>
