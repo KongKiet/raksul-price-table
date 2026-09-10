@@ -21,6 +21,7 @@ function App() {
   const [selectedCell, setSelectedCell] = useState<PriceCellIdentity | null>(
     null,
   )
+  const [showAllRows, setShowAllRows] = useState(false)
   const { data, error, loading, retry } = usePrices(appliedPaperSize)
   const hasPrices = data?.prices.some((row) => row.length > 0) ?? false
   const selectedPrice = data?.prices
@@ -36,6 +37,7 @@ function App() {
 
     if (draftPaperSize !== appliedPaperSize) {
       setSelectedCell(null)
+      setShowAllRows(false)
       setAppliedPaperSize(draftPaperSize)
     }
   }
@@ -147,6 +149,8 @@ function App() {
               prices={data.prices}
               selectedCell={selectedCell}
               onSelect={setSelectedCell}
+              showAllRows={showAllRows}
+              onShowAllRows={() => setShowAllRows(true)}
             />
           )}
         </section>

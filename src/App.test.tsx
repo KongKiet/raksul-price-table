@@ -30,6 +30,10 @@ function createPrices(): PriceResponse {
       [{ business_day: 1, price: 2_500, quantity: 40 }],
       [{ business_day: 1, price: 3_000, quantity: 50 }],
       [{ business_day: 1, price: 3_500, quantity: 60 }],
+      [{ business_day: 1, price: 4_000, quantity: 70 }],
+      [{ business_day: 1, price: 4_500, quantity: 80 }],
+      [{ business_day: 1, price: 5_000, quantity: 90 }],
+      [{ business_day: 1, price: 5_500, quantity: 100 }],
     ],
   }
 }
@@ -127,6 +131,10 @@ describe('App', () => {
         .map((header) => header.textContent),
     ).toEqual(['10', '20', '30', '40', '50'])
     expect(within(table).queryByRole('rowheader', { name: '60' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'See more' })).toHaveAttribute(
+      'aria-controls',
+      'price-table',
+    )
 
     const firstRow = within(table)
       .getByRole('rowheader', { name: '10' })
@@ -147,6 +155,64 @@ describe('App', () => {
         .getAllByRole('cell')
         .map((cell) => cell.textContent),
     ).toEqual(['1,500', '—Unavailable', '1,300'])
+    expect(fetchPricesMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('reveals all ten loaded rows without making another request', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    const table = await screen.findByRole('table')
+    await user.click(screen.getByRole('button', { name: 'See more' }))
+
+    expect(
+      within(table)
+        .getAllByRole('rowheader')
+        .map((header) => header.textContent),
+    ).toEqual(['10', '20', '30', '40', '50', '60', '70', '80', '90', '100'])
+    expect(
+      screen.queryByRole('button', { name: 'See more' }),
+    ).not.toBeInTheDocument()
+    expect(fetchPricesMock).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([
+    ['Enter', '{Enter}'],
+    ['Space', ' '],
+  ])('supports %s keyboard activation for See more', async (_name, key) => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    const seeMore = await screen.findByRole('button', { name: 'See more' })
+    seeMore.focus()
+    await user.keyboard(key)
+
+    expect(screen.getByRole('rowheader', { name: '100' })).toBeInTheDocument()
+    expect(fetchPricesMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('counts only usable rows when deciding what to reveal', async () => {
+    const user = userEvent.setup()
+    const response = createPrices()
+    response.prices.splice(2, 0, [])
+    fetchPricesMock.mockResolvedValue(response)
+
+    render(<App />)
+
+    const table = await screen.findByRole('table')
+    expect(
+      within(table)
+        .getAllByRole('rowheader')
+        .map((header) => header.textContent),
+    ).toEqual(['10', '20', '30', '40', '50'])
+
+    await user.click(screen.getByRole('button', { name: 'See more' }))
+
+    expect(within(table).getAllByRole('rowheader')).toHaveLength(10)
     expect(fetchPricesMock).toHaveBeenCalledTimes(1)
   })
 
@@ -296,6 +362,33 @@ describe('App', () => {
     expect(getOrderPrice()).toHaveTextContent('\u2014')
   })
 
+  it('selects an expanded-row price and clears it with a size change', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock
+      .mockResolvedValueOnce(createPrices())
+      .mockResolvedValueOnce(createPricesFor('A5'))
+
+    render(<App />)
+
+    await user.click(await screen.findByRole('button', { name: 'See more' }))
+    const expandedPrice = screen.getByRole('button', {
+      name: 'Select 5,500, quantity 100, 1 business day',
+    })
+    await user.click(expandedPrice)
+
+    expect(expandedPrice).toHaveAttribute('aria-pressed', 'true')
+    expect(getOrderPrice()).toHaveTextContent('5,500')
+
+    await applyPaperSize(user, 'A5')
+
+    const nextTable = await screen.findByRole('table', {
+      name: 'A5 price table',
+    })
+    expect(within(nextTable).getAllByRole('rowheader')).toHaveLength(5)
+    expect(getOrderPrice()).toHaveTextContent('\u2014')
+    expect(screen.getByRole('button', { name: 'See more' })).toBeInTheDocument()
+  })
+
   it('renders all rows when fewer than five are available', async () => {
     const response = createPrices()
     response.prices = response.prices.slice(0, 2)
@@ -305,6 +398,48 @@ describe('App', () => {
 
     const table = await screen.findByRole('table')
     expect(within(table).getAllByRole('rowheader')).toHaveLength(2)
+    expect(
+      screen.queryByRole('button', { name: 'See more' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('preserves expansion for draft and same-size Apply, then resets it for a different size', async () => {
+    const user = userEvent.setup()
+    const nextRequest = deferred<PriceResponse>()
+    fetchPricesMock
+      .mockResolvedValueOnce(createPrices())
+      .mockReturnValueOnce(nextRequest.promise)
+
+    render(<App />)
+
+    await user.click(await screen.findByRole('button', { name: 'See more' }))
+    await selectPaperSize(user, 'A5')
+
+    expect(screen.getByRole('rowheader', { name: '100' })).toBeInTheDocument()
+    expect(fetchPricesMock).toHaveBeenCalledTimes(1)
+
+    await selectPaperSize(user, 'A4')
+    await user.click(screen.getByRole('button', { name: 'Apply' }))
+
+    expect(screen.getByRole('rowheader', { name: '100' })).toBeInTheDocument()
+    expect(fetchPricesMock).toHaveBeenCalledTimes(1)
+
+    await applyPaperSize(user, 'A5')
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+
+    await act(async () => {
+      nextRequest.resolve(createPricesFor('A5'))
+    })
+
+    const nextTable = await screen.findByRole('table', {
+      name: 'A5 price table',
+    })
+    expect(within(nextTable).getAllByRole('rowheader')).toHaveLength(5)
+    expect(
+      within(nextTable).queryByRole('rowheader', { name: '100' }),
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'See more' })).toBeInTheDocument()
+    expect(fetchPricesMock).toHaveBeenCalledTimes(2)
   })
 
   it('shows an empty state when the response has no usable rows', async () => {

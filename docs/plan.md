@@ -128,9 +128,10 @@ High-level acceptance criteria:
 - **ID:** T05
 - **Goal:** Implement See more.
 - **Dependencies:** T03.
-- **Implementation:** TODO
-- **Review:** PENDING
+- **Implementation:** VERIFIED
+- **Review:** DEFERRED
 - **Shipping:** NOT_SHIPPED
+- **Detailed plan:** [T05](tasks/T05.md)
 
 High-level acceptance criteria:
 

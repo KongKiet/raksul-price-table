@@ -137,6 +137,34 @@
   border: 0;
 }
 
+.seeMore {
+  display: flex;
+  justify-content: center;
+  padding-top: 18px;
+}
+
+.seeMoreButton {
+  min-height: 44px;
+  padding: 10px 22px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  color: var(--accent);
+  background: var(--surface);
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.seeMoreButton:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.seeMoreButton:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
 @media (max-width: 640px) {
   .scrollRegion {
     border-radius: 12px;
