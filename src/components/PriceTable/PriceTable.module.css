@@ -102,21 +102,20 @@
   cursor: pointer;
 }
 
-.table th.weakHighlight,
-.table td.weakHighlight {
-  background: #f1f6ff;
-}
-
-.table td.strongHighlight {
-  background: #cfe1ff;
-}
-
 .priceButton[aria-pressed='true'] {
   background: var(--accent-soft);
   box-shadow: inset 0 0 0 3px var(--accent);
 }
 
-.table td.strongHighlight .priceButton {
+.table thead tr th.weakHighlight,
+.table tbody tr th.weakHighlight,
+.table tbody tr td.weakHighlight,
+.priceButton[data-hover-surface='weak'] {
+  background: var(--accent-soft);
+}
+
+.table tbody tr td.strongHighlight,
+.priceButton[data-hover-surface='strong'] {
   background: #cfe1ff;
 }
 

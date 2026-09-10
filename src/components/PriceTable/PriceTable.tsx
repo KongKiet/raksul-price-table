@@ -97,11 +97,17 @@ export function PriceTable({
                       hoveredCell?.businessDay === businessDay
                     const isHoveredCell =
                       isHoveredRow && isHoveredColumn && entry !== undefined
-                    const hoverClass = isHoveredCell
-                      ? styles.strongHighlight
+                    const hoverHighlight = isHoveredCell
+                      ? 'strong'
                       : isHoveredRow || isHoveredColumn
-                        ? styles.weakHighlight
+                        ? 'weak'
                         : undefined
+                    const hoverClass =
+                      hoverHighlight === 'strong'
+                        ? styles.strongHighlight
+                        : hoverHighlight === 'weak'
+                          ? styles.weakHighlight
+                          : undefined
 
                     return (
                       <td
@@ -111,18 +117,13 @@ export function PriceTable({
                         ]
                           .filter(Boolean)
                           .join(' ')}
-                        data-hover-highlight={
-                          isHoveredCell
-                            ? 'strong'
-                            : isHoveredRow || isHoveredColumn
-                              ? 'weak'
-                              : undefined
-                        }
+                        data-hover-highlight={hoverHighlight}
                         key={businessDay}
                       >
                         {entry ? (
                           <button
                             className={styles.priceButton}
+                            data-hover-surface={hoverHighlight}
                             type="button"
                             aria-label={`Select ${formatPrice(entry.price)}, quantity ${formatPrice(quantity)}, ${businessDay} business ${businessDay === 1 ? 'day' : 'days'}`}
                             aria-pressed={

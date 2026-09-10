@@ -361,6 +361,44 @@ describe('App', () => {
     expect(fetchPricesMock).toHaveBeenCalledTimes(2)
   })
 
+  it('paints the expanded last-row surface with the same weak column state', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    await user.click(await screen.findByRole('button', { name: 'See more' }))
+    const lastRowPrice = screen.getByRole('button', {
+      name: 'Select 5,500, quantity 100, 1 business day',
+    })
+    await user.click(lastRowPrice)
+
+    const hoveredPrice = screen.getByRole('button', {
+      name: 'Select 3,000, quantity 50, 1 business day',
+    })
+    fireEvent.pointerEnter(hoveredPrice)
+
+    expect(hoveredPrice).toHaveAttribute('data-hover-surface', 'strong')
+    expect(lastRowPrice).toHaveAttribute('data-hover-surface', 'weak')
+    expect(lastRowPrice.closest('td')).toHaveAttribute(
+      'data-hover-highlight',
+      'weak',
+    )
+    expect(lastRowPrice).toHaveAttribute('aria-pressed', 'true')
+    expect(getOrderPrice()).toHaveTextContent('5,500')
+
+    const weakSurfaces = document.querySelectorAll(
+      '[data-hover-surface="weak"]',
+    )
+    expect(weakSurfaces.length).toBeGreaterThan(0)
+    expect(
+      [...weakSurfaces].every(
+        (surface) => surface.getAttribute('data-hover-surface') === 'weak',
+      ),
+    ).toBe(true)
+    expect(fetchPricesMock).toHaveBeenCalledTimes(1)
+  })
+
   it.each([
     ['Enter', '{Enter}'],
     ['Space', ' '],
