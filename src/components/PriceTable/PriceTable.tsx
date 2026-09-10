@@ -55,20 +55,7 @@ export function PriceTable({
             <tr>
               <th scope="col">Quantity</th>
               {businessDays.map((businessDay) => (
-                <th
-                  className={
-                    hoveredCell?.businessDay === businessDay
-                      ? styles.weakHighlight
-                      : undefined
-                  }
-                  data-hover-highlight={
-                    hoveredCell?.businessDay === businessDay
-                      ? 'weak'
-                      : undefined
-                  }
-                  scope="col"
-                  key={businessDay}
-                >
+                <th scope="col" key={businessDay}>
                   {businessDay} business {businessDay === 1 ? 'day' : 'days'}
                 </th>
               ))}
@@ -84,13 +71,7 @@ export function PriceTable({
 
               return (
                 <tr key={quantity}>
-                  <th
-                    className={isHoveredRow ? styles.weakHighlight : undefined}
-                    data-hover-highlight={isHoveredRow ? 'weak' : undefined}
-                    scope="row"
-                  >
-                    {formatPrice(quantity)}
-                  </th>
+                  <th scope="row">{formatPrice(quantity)}</th>
                   {businessDays.map((businessDay) => {
                     const entry = entriesByBusinessDay.get(businessDay)
                     const isHoveredColumn =

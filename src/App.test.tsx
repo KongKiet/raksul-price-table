@@ -187,7 +187,7 @@ describe('App', () => {
     expect(fetchPricesMock).toHaveBeenCalledTimes(1)
   })
 
-  it('highlights the hovered cell strongly and its identity-based row and column weakly', async () => {
+  it('highlights the hovered price cell strongly and identity-based row/column price cells weakly, excluding headers', async () => {
     fetchPricesMock.mockResolvedValue(createPrices())
 
     render(<App />)
@@ -213,10 +213,10 @@ describe('App', () => {
     expect(hoveredCell).toHaveAttribute('data-hover-highlight', 'strong')
     expect(
       within(table).getByRole('rowheader', { name: '10' }),
-    ).toHaveAttribute('data-hover-highlight', 'weak')
+    ).not.toHaveAttribute('data-hover-highlight')
     expect(
       within(table).getByRole('columnheader', { name: '2 business days' }),
-    ).toHaveAttribute('data-hover-highlight', 'weak')
+    ).not.toHaveAttribute('data-hover-highlight')
 
     const hoveredRowCells = within(
       hoveredRow as HTMLTableRowElement,
@@ -265,7 +265,7 @@ describe('App', () => {
     )
     expect(
       screen.getByRole('columnheader', { name: '3 business days' }),
-    ).toHaveAttribute('data-hover-highlight', 'weak')
+    ).not.toHaveAttribute('data-hover-highlight')
     expect(
       screen.getByRole('columnheader', { name: '2 business days' }),
     ).not.toHaveAttribute('data-hover-highlight')
@@ -726,6 +726,9 @@ describe('App', () => {
 
     await user.click(increaseButton)
     expect(dialog).toHaveTextContent('2,000')
+    expect(
+      within(dialog).getByLabelText('Quantity in cart: 2'),
+    ).toHaveAttribute('aria-live', 'polite')
 
     await user.click(decreaseButton)
     await user.click(decreaseButton)
@@ -787,6 +790,10 @@ describe('App', () => {
     const dialog = screen.getByRole('dialog', { name: 'Your cart' })
 
     expect(dialog).toHaveTextContent('¥2,500')
+    expect(within(dialog).getByLabelText('Total')).toHaveAttribute(
+      'aria-live',
+      'polite',
+    )
   })
 
   it('lists cart lines newest first', async () => {

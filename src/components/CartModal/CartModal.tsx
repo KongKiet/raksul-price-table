@@ -90,7 +90,11 @@ export function CartModal({
                 >
                   &minus;
                 </button>
-                <span className={styles.quantityValue}>
+                <span
+                  className={styles.quantityValue}
+                  aria-live="polite"
+                  aria-label={`Quantity in cart: ${line.cartQuantity}`}
+                >
                   {line.cartQuantity}
                 </span>
                 <button
@@ -120,8 +124,16 @@ export function CartModal({
 
       <div className={styles.footer}>
         <div className={styles.total}>
-          <span className={styles.totalLabel}>Total</span>
-          <span className={styles.totalValue}>¥{formatPrice(total)}</span>
+          <span className={styles.totalLabel} id="cart-total-label">
+            Total
+          </span>
+          <span
+            className={styles.totalValue}
+            aria-labelledby="cart-total-label"
+            aria-live="polite"
+          >
+            ¥{formatPrice(total)}
+          </span>
         </div>
         <button
           className={styles.checkoutButton}
