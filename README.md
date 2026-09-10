@@ -1,6 +1,6 @@
 # Raksul price table
 
-An interactive price table for paper printing products (A4, A5, B4, B5), organized by delivery business days and quantity, built with React, TypeScript, and Vite. See [`docs/assignment.md`](docs/assignment.md) for the full product requirements and [`docs/decisions.md`](docs/decisions.md) for the implementation assumptions that fill the gaps the assignment leaves open (Apply behavior, cart scope, persistence).
+An interactive price table for paper printing products (A4, A5, B4, B5), organized by delivery business days and quantity, built with React, TypeScript, and Vite.
 
 ## Setup
 
@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-The dev server prints a local URL (Vite picks the next free port starting at 5173). The app requests live prices from the production API documented in `docs/assignment.md`; no local mock server or `.env` configuration is required.
+The dev server prints a local URL (Vite picks the next free port starting at 5173). The app requests live prices from the production pricing API for A4, A5, B4, and B5 paper sizes; no local mock server or `.env` configuration is required.
 
 ## Workflow commands
 
@@ -35,11 +35,11 @@ The dev server prints a local URL (Vite picks the next free port starting at 517
 
 ## Assumptions and scope boundaries
 
-The assignment leaves some behavior unspecified; the following implementation choices are documented in full in `docs/decisions.md`:
+The original requirements left some behavior unspecified; the following implementation choices fill those gaps:
 
 - Apply, not the dropdown alone, controls what table is displayed; changing the applied size resets selection, hover, and the five-row view.
 - Order price is the selected cell's price as returned by the API, not multiplied by quantity.
-- Cart, checkout, and persistence were added as explicit follow-on scope on top of the original assignment (tracked as tasks T07–T09 in `docs/plan.md`). Checkout performs no real payment/order processing, and there is no routing, global state store, or backend — cart state is plain React state, persisted only to `localStorage`.
+- Cart, checkout, and persistence were added as explicit follow-on scope on top of the original assignment. Checkout performs no real payment/order processing, and there is no routing, global state store, or backend — cart state is plain React state, persisted only to `localStorage`.
 - No CSS framework, UI component library, or utility library (e.g. Bootstrap, jQuery, Lodash) is used, per the assignment's technical restrictions; styling uses CSS Modules and design tokens (`src/index.css`), and the cart icon, modal, and notification are built from native elements.
 - The price formatter (`src/utils/formatPrice.ts`) inserts thousands separators without `toLocaleString()`/`Intl.NumberFormat()`, per the assignment restriction, and has dedicated unit tests.
 
@@ -51,5 +51,5 @@ The assignment leaves some behavior unspecified; the following implementation ch
 
 ## Known limitations
 
-- **Reference image unavailable.** The mockup referenced by the original requirements was shown during requirements gathering but its image file was never available to save into this repository (see `docs/assignment.md`). No task has been able to compare rendered output against it pixel-for-pixel; the implementation follows the mockup's described elements (selector, Apply, price table, Order price, cart) rather than a saved reference.
+- **Reference image unavailable.** A mockup was shown during requirements gathering but its image file was never available to save into this repository. Rendered output could not be compared against it pixel-for-pixel; the implementation follows the mockup's described elements (selector, Apply, price table, Order price, cart) rather than a saved reference.
 - **Narrow-width (≤640px) layout is pattern-verified, not live-rendered, in this project's own browser-automation sessions.** The CSS follows the same `@media (max-width: 640px)` responsive rules already used consistently across components, but the automation tooling used during development (`resize_window`) does not change the page's actual effective viewport (confirmed via `window.innerWidth`), so this layout could not be exercised in a live narrow render during automated verification. A manual check by resizing an actual browser window, or using its device toolbar, is recommended before relying on narrow-width layout in production.
