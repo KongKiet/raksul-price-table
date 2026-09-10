@@ -50,8 +50,19 @@ The following assumptions are supplied by the user for implementation. They are 
 
 ### Scope boundaries
 
-- Cart behavior is unspecified; checkout is outside scope.
+- Cart behavior was unspecified in the original assignment; checkout was outside scope.
 - Routing, a global store, and a backend are outside the current scope.
+
+### Cart scope (advanced tasks, added 2026-09-10)
+
+The user requested three additional advanced tasks that bring cart behavior into scope, tracked as T07–T09 in `docs/plan.md`: component structure optimization, cart-ready UI layout, and Add to Cart functionality. These are user-supplied implementation decisions, not a change to the original assignment text in `assignment.md`.
+
+- Add to Cart is enabled only when a table cell is selected; clicking it adds the selected paper size, quantity, business day, and price to cart state and shows a small success notification.
+- A cart modal, opened from a new cart icon, lists cart contents with quantity increase/decrease and removal controls, a total price, and a Checkout button.
+- Still outside scope: real checkout/payment processing, routing, and a backend.
+- Cart state uses React local state, consistent with the existing stack decision; it does not introduce a global store.
+- Cart contents are not persisted across page reloads; no storage mechanism was requested.
+- The cart icon and any status/notification UI are built with native elements and existing CSS Modules/tokens, consistent with the "no UI component libraries" restriction.
 
 ## Current preparation status
 

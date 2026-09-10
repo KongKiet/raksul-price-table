@@ -1,0 +1,58 @@
+.panel {
+  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+}
+
+.panelHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.panelTitle {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 1.45rem;
+}
+
+.panelDescription {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+}
+
+.paperBadge {
+  flex: 0 0 auto;
+  padding: 8px 13px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.panelSummary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .panel {
+    padding: 18px;
+    border-radius: 18px;
+  }
+
+  .panelHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .panelSummary {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

@@ -1,0 +1,88 @@
+import { type PaperSize, type PriceResponse } from '../../api/prices'
+import { OrderPriceSummary } from '../OrderPriceSummary/OrderPriceSummary'
+import { PriceStatusMessage } from '../PriceStatusMessage/PriceStatusMessage'
+import { PriceTable, type PriceCellIdentity } from '../PriceTable/PriceTable'
+import styles from './PricePanel.module.css'
+
+interface PricePanelProps {
+  appliedPaperSize: PaperSize
+  data: PriceResponse | null
+  loading: boolean
+  error: string | null
+  onRetry: () => void
+  selectedCell: PriceCellIdentity | null
+  onSelect: (cell: PriceCellIdentity) => void
+  hoveredCell: PriceCellIdentity | null
+  onHover: (cell: PriceCellIdentity) => void
+  onHoverEnd: (cell: PriceCellIdentity) => void
+  showAllRows: boolean
+  onShowAllRows: () => void
+  selectedPrice: number | undefined
+}
+
+export function PricePanel({
+  appliedPaperSize,
+  data,
+  loading,
+  error,
+  onRetry,
+  selectedCell,
+  onSelect,
+  hoveredCell,
+  onHover,
+  onHoverEnd,
+  showAllRows,
+  onShowAllRows,
+  selectedPrice,
+}: PricePanelProps) {
+  const hasPrices = data?.prices.some((row) => row.length > 0) ?? false
+
+  return (
+    <section
+      className={styles.panel}
+      aria-labelledby="price-table-heading"
+      aria-busy={loading}
+    >
+      <div className={styles.panelHeader}>
+        <div>
+          <h2 className={styles.panelTitle} id="price-table-heading">
+            {appliedPaperSize} price table
+          </h2>
+          <p className={styles.panelDescription}>
+            Prices by quantity and delivery business days
+          </p>
+        </div>
+        <div className={styles.panelSummary}>
+          <OrderPriceSummary price={selectedPrice} />
+          <span className={styles.paperBadge}>{appliedPaperSize}</span>
+        </div>
+      </div>
+
+      {loading && (
+        <PriceStatusMessage status="loading" paperSize={appliedPaperSize} />
+      )}
+
+      {!loading && error && (
+        <PriceStatusMessage status="error" message={error} onRetry={onRetry} />
+      )}
+
+      {!loading && !error && data && !hasPrices && (
+        <PriceStatusMessage status="empty" paperSize={appliedPaperSize} />
+      )}
+
+      {!loading && !error && data && hasPrices && (
+        <PriceTable
+          paperSize={appliedPaperSize}
+          prices={data.prices}
+          selectedCell={selectedCell}
+          onSelect={onSelect}
+          hoveredCell={hoveredCell}
+          onHover={onHover}
+          onHoverEnd={onHoverEnd}
+          showAllRows={showAllRows}
+          onShowAllRows={onShowAllRows}
+        />
+      )}
+    </section>
+  )
+}

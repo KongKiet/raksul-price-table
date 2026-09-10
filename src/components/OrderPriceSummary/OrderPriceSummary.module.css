@@ -1,0 +1,26 @@
+.orderPrice {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+.orderPriceLabel {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.orderPriceValue {
+  color: var(--text-strong);
+  font-size: 1.15rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .orderPrice {
+    justify-items: start;
+  }
+}

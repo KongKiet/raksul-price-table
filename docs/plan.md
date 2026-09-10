@@ -61,7 +61,7 @@ High-level acceptance criteria:
 - **Dependencies:** T00.
 - **Implementation:** VERIFIED
 - **Review:** DEFERRED
-- **Shipping:** NOT_SHIPPED
+- **Shipping:** COMMITTED
 - **Detailed plan:** [T01](tasks/T01.md)
 
 High-level acceptance criteria:
@@ -77,7 +77,7 @@ High-level acceptance criteria:
 - **Dependencies:** T00, T01.
 - **Implementation:** VERIFIED
 - **Review:** DEFERRED
-- **Shipping:** NOT_SHIPPED
+- **Shipping:** COMMITTED
 - **Detailed plan:** [T02](tasks/T02.md)
 
 High-level acceptance criteria:
@@ -95,7 +95,7 @@ High-level acceptance criteria:
 - **Dependencies:** T02.
 - **Implementation:** VERIFIED
 - **Review:** DEFERRED
-- **Shipping:** NOT_SHIPPED
+- **Shipping:** SHIPPED
 - **Detailed plan:** [T03](tasks/T03.md)
 
 High-level acceptance criteria:
@@ -113,7 +113,7 @@ High-level acceptance criteria:
 - **Dependencies:** T03.
 - **Implementation:** VERIFIED
 - **Review:** DEFERRED
-- **Shipping:** NOT_SHIPPED
+- **Shipping:** SHIPPED
 - **Detailed plan:** [T04](tasks/T04.md)
 
 High-level acceptance criteria:
@@ -130,7 +130,7 @@ High-level acceptance criteria:
 - **Dependencies:** T03.
 - **Implementation:** VERIFIED
 - **Review:** DEFERRED
-- **Shipping:** NOT_SHIPPED
+- **Shipping:** SHIPPED
 - **Detailed plan:** [T05](tasks/T05.md)
 
 High-level acceptance criteria:
@@ -147,7 +147,7 @@ High-level acceptance criteria:
 - **Dependencies:** T04, T05.
 - **Implementation:** VERIFIED
 - **Review:** DEFERRED
-- **Shipping:** NOT_SHIPPED
+- **Shipping:** SHIPPED
 - **Detailed plan:** [T06](tasks/T06.md)
 
 High-level acceptance criteria:
@@ -157,11 +157,66 @@ High-level acceptance criteria:
 - Highlighting works across expanded rows and matches cell identity rather than entry position.
 - Changing the applied paper size clears hover; tests cover highlight transitions and interaction with selection.
 
-## T07 — Accessibility, regression verification, browser QA, and README
+## T07 — Component structure optimization
 
 - **ID:** T07
-- **Goal:** Complete accessibility checks, regression verification, browser QA, and README.
+- **Goal:** Decompose the application into logical, reusable components so `App.tsx` only composes them, without changing behavior.
 - **Dependencies:** T00, T01, T02, T03, T04, T05, T06.
+- **Implementation:** VERIFIED
+- **Review:** DEFERRED
+- **Shipping:** NOT_SHIPPED
+- **Detailed plan:** [T07](tasks/T07.md)
+
+High-level acceptance criteria:
+
+- `App.tsx` owns state and wiring only; it renders extracted components for the paper-size form, the price panel (status states plus table), and the order-price display, rather than containing their markup directly.
+- Extracted components follow existing data contracts (`PaperSize`, `PriceCellIdentity`, `usePrices`) and existing CSS Modules/design tokens; no visible layout, styling, or behavior changes result from this task.
+- Each component has one clear responsibility and lives under `src/components/<Name>/`, matching the existing `PriceTable` folder convention.
+- All existing automated tests continue to pass unchanged in behavior coverage; test files may be reorganized to match new component boundaries.
+- This is a refactor: it introduces no cart UI or cart logic (see T08 and T09).
+
+## T08 — Cart-ready UI layout
+
+- **ID:** T08
+- **Goal:** Update the UI layout to accommodate future cart logic: an Add to Cart action area below the table, a restyled `appliedPaperSize` badge, and a cart icon above the table.
+- **Dependencies:** T07.
+- **Implementation:** PLANNED
+- **Review:** PENDING
+- **Shipping:** NOT_SHIPPED
+- **Detailed plan:** [T08](tasks/T08.md)
+
+High-level acceptance criteria:
+
+- Below the price table, add a component containing an "Add to Cart" button and the "Order price" of the currently selected cell; the button is disabled while no cell is selected and enabled once one is.
+- Remove the Order price display currently shown beside `appliedPaperSize`.
+- Enlarge the `appliedPaperSize` badge and give it a circular background wrapper.
+- Above the table, alongside the paper-size selection form, add a shopping cart icon positioned on the opposite side of the row from the form, representing the cart entry point.
+- This task is layout and wiring only, reusing existing selection state; Add to Cart and the cart icon perform no persistent action, notification, or modal yet (see T09).
+- Layout remains responsive at existing breakpoints and preserves established accessibility conventions (semantic elements, accessible names, visible focus).
+
+## T09 — Add to Cart functionality
+
+- **ID:** T09
+- **Goal:** Implement cart state and interactions: adding items with a success notification, and a cart contents modal with quantity and removal controls plus a disabled-when-empty Checkout button.
+- **Dependencies:** T08.
+- **Implementation:** PLANNED
+- **Review:** PENDING
+- **Shipping:** NOT_SHIPPED
+- **Detailed plan:** [T09](tasks/T09.md)
+
+High-level acceptance criteria:
+
+- Clicking Add to Cart (enabled per T08 only when a cell is selected) adds the selected paper size, quantity, business day, and price to cart state, incrementing quantity when the same line already exists, and shows a small success notification styled consistently with the project's existing status/feedback conventions.
+- Clicking the cart icon opens a modal listing current cart contents; the modal handles an empty-cart state and scrolls when the list is long, without a UI framework or component library.
+- Each cart line shows paper size, quantity, and business days, with controls to increase or decrease quantity and to remove the line.
+- The modal shows a computed total price (reusing the existing price formatter) and a Checkout button at the bottom; Checkout is disabled when the cart is empty and otherwise performs no real checkout processing.
+- Cart state uses plain React state, is not persisted across reloads, and introduces no routing, global store, or backend, consistent with existing scope boundaries.
+
+## T10 — Accessibility, regression verification, browser QA, and README
+
+- **ID:** T10
+- **Goal:** Complete accessibility checks, regression verification, browser QA, and README.
+- **Dependencies:** T00, T01, T02, T03, T04, T05, T06, T07, T08, T09.
 - **Implementation:** TODO
 - **Review:** PENDING
 - **Shipping:** NOT_SHIPPED
@@ -169,8 +224,8 @@ High-level acceptance criteria:
 High-level acceptance criteria:
 
 - Verify semantic table structure, accessible control names, keyboard operation, visible focus, and understandable loading, error, empty, and selection states.
-- Regression checks cover formatter behavior, table mapping, Apply and stale requests, selection and Order price, See more, and hover interactions together.
+- Regression checks cover formatter behavior, table mapping, Apply and stale requests, selection and Order price, See more, hover interactions, the component restructuring, and cart interactions (add to cart, notification, modal, quantity/removal controls, Checkout disabled state) together.
 - Run formatting checks, lint, tests, and the production build; record results and resolve blocking failures without weakening checks.
 - Perform browser QA in the latest Chrome or Firefox when available and compare against the documented visual reference when available. Record browser/version and findings, or the manual verification still needed and missing reference limitation.
 - Update README with setup and workflow commands, product behavior, relevant assumptions, verification guidance, and known limitations while preserving applicable existing content.
-- Confirm Cart behavior remains unspecified and checkout, routing, a global store, and a backend remain outside scope.
+- Confirm cart add-to-cart, notification, and cart-contents modal behavior (T07–T09) are covered by the checks above; checkout processing, routing, a global store, and a backend remain outside scope.

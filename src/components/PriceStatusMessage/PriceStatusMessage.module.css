@@ -1,0 +1,58 @@
+.state {
+  display: grid;
+  min-height: 300px;
+  place-items: center;
+  padding: 32px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 18px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.stateContent {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+}
+
+.spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.retryButton {
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 10px;
+  color: white;
+  background: var(--accent);
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.retryButton:hover {
+  background: var(--accent-hover);
+}
+
+.retryButton:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}
