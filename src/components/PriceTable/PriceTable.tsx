@@ -7,6 +7,9 @@ interface PriceTableProps {
   prices: PriceRow[]
   selectedCell: PriceCellIdentity | null
   onSelect: (cell: PriceCellIdentity) => void
+  hoveredCell: PriceCellIdentity | null
+  onHover: (cell: PriceCellIdentity) => void
+  onHoverEnd: (cell: PriceCellIdentity) => void
   showAllRows: boolean
   onShowAllRows: () => void
 }
@@ -27,6 +30,9 @@ export function PriceTable({
   prices,
   selectedCell,
   onSelect,
+  hoveredCell,
+  onHover,
+  onHoverEnd,
   showAllRows,
   onShowAllRows,
 }: PriceTableProps) {
@@ -49,7 +55,20 @@ export function PriceTable({
             <tr>
               <th scope="col">Quantity</th>
               {businessDays.map((businessDay) => (
-                <th scope="col" key={businessDay}>
+                <th
+                  className={
+                    hoveredCell?.businessDay === businessDay
+                      ? styles.weakHighlight
+                      : undefined
+                  }
+                  data-hover-highlight={
+                    hoveredCell?.businessDay === businessDay
+                      ? 'weak'
+                      : undefined
+                  }
+                  scope="col"
+                  key={businessDay}
+                >
                   {businessDay} business {businessDay === 1 ? 'day' : 'days'}
                 </th>
               ))}
@@ -58,20 +77,46 @@ export function PriceTable({
           <tbody>
             {rows.map((row) => {
               const quantity = row[0].quantity
+              const isHoveredRow = hoveredCell?.quantity === quantity
               const entriesByBusinessDay = new Map(
                 row.map((entry) => [entry.business_day, entry]),
               )
 
               return (
                 <tr key={quantity}>
-                  <th scope="row">{formatPrice(quantity)}</th>
+                  <th
+                    className={isHoveredRow ? styles.weakHighlight : undefined}
+                    data-hover-highlight={isHoveredRow ? 'weak' : undefined}
+                    scope="row"
+                  >
+                    {formatPrice(quantity)}
+                  </th>
                   {businessDays.map((businessDay) => {
                     const entry = entriesByBusinessDay.get(businessDay)
+                    const isHoveredColumn =
+                      hoveredCell?.businessDay === businessDay
+                    const isHoveredCell =
+                      isHoveredRow && isHoveredColumn && entry !== undefined
+                    const hoverClass = isHoveredCell
+                      ? styles.strongHighlight
+                      : isHoveredRow || isHoveredColumn
+                        ? styles.weakHighlight
+                        : undefined
 
                     return (
                       <td
-                        className={
-                          entry ? styles.available : styles.unavailable
+                        className={[
+                          entry ? styles.available : styles.unavailable,
+                          hoverClass,
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        data-hover-highlight={
+                          isHoveredCell
+                            ? 'strong'
+                            : isHoveredRow || isHoveredColumn
+                              ? 'weak'
+                              : undefined
                         }
                         key={businessDay}
                       >
@@ -85,6 +130,12 @@ export function PriceTable({
                               selectedCell.businessDay === businessDay
                             }
                             onClick={() => onSelect({ quantity, businessDay })}
+                            onPointerEnter={() =>
+                              onHover({ quantity, businessDay })
+                            }
+                            onPointerLeave={() =>
+                              onHoverEnd({ quantity, businessDay })
+                            }
                           >
                             {formatPrice(entry.price)}
                           </button>

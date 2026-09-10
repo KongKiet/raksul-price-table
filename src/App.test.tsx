@@ -1,5 +1,12 @@
 import { StrictMode } from 'react'
-import { act, render, screen, waitFor, within } from '@testing-library/react'
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -176,6 +183,182 @@ describe('App', () => {
       screen.queryByRole('button', { name: 'See more' }),
     ).not.toBeInTheDocument()
     expect(fetchPricesMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('highlights the hovered cell strongly and its identity-based row and column weakly', async () => {
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    const table = await screen.findByRole('table')
+    const hoveredPrice = screen.getByRole('button', {
+      name: 'Select 900, quantity 10, 2 business days',
+    })
+    const hoveredCell = hoveredPrice.closest('td')
+    const hoveredRow = screen
+      .getByRole('rowheader', { name: '10' })
+      .closest('tr')
+    const sparseRow = screen
+      .getByRole('rowheader', { name: '20' })
+      .closest('tr')
+
+    expect(hoveredCell).not.toBeNull()
+    expect(hoveredRow).not.toBeNull()
+    expect(sparseRow).not.toBeNull()
+
+    fireEvent.pointerEnter(hoveredPrice)
+
+    expect(hoveredCell).toHaveAttribute('data-hover-highlight', 'strong')
+    expect(
+      within(table).getByRole('rowheader', { name: '10' }),
+    ).toHaveAttribute('data-hover-highlight', 'weak')
+    expect(
+      within(table).getByRole('columnheader', { name: '2 business days' }),
+    ).toHaveAttribute('data-hover-highlight', 'weak')
+
+    const hoveredRowCells = within(
+      hoveredRow as HTMLTableRowElement,
+    ).getAllByRole('cell')
+    expect(hoveredRowCells[0]).toHaveAttribute('data-hover-highlight', 'weak')
+    expect(hoveredRowCells[1]).toHaveAttribute('data-hover-highlight', 'strong')
+    expect(hoveredRowCells[2]).toHaveAttribute('data-hover-highlight', 'weak')
+
+    const sparseUnavailableCell = within(
+      sparseRow as HTMLTableRowElement,
+    ).getAllByRole('cell')[1]
+    expect(sparseUnavailableCell).toHaveAttribute(
+      'data-hover-highlight',
+      'weak',
+    )
+    expect(
+      within(sparseUnavailableCell).getByText('Unavailable'),
+    ).toBeInTheDocument()
+    expect(
+      screen
+        .getByRole('rowheader', { name: '40' })
+        .closest('tr')
+        ?.querySelector('td'),
+    ).not.toHaveAttribute('data-hover-highlight')
+  })
+
+  it('transfers hover without stale leave clearing and removes it on final exit', async () => {
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    const firstPrice = await screen.findByRole('button', {
+      name: 'Select 900, quantity 10, 2 business days',
+    })
+    const nextPrice = screen.getByRole('button', {
+      name: 'Select 1,300, quantity 20, 3 business days',
+    })
+
+    fireEvent.pointerEnter(firstPrice)
+    fireEvent.pointerEnter(nextPrice)
+    fireEvent.pointerLeave(firstPrice)
+
+    expect(nextPrice.closest('td')).toHaveAttribute(
+      'data-hover-highlight',
+      'strong',
+    )
+    expect(
+      screen.getByRole('columnheader', { name: '3 business days' }),
+    ).toHaveAttribute('data-hover-highlight', 'weak')
+    expect(
+      screen.getByRole('columnheader', { name: '2 business days' }),
+    ).not.toHaveAttribute('data-hover-highlight')
+
+    fireEvent.pointerLeave(nextPrice)
+
+    expect(document.querySelector('[data-hover-highlight]')).toBeNull()
+    expect(fetchPricesMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps selection and Order price independent from hover', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    const selectedPrice = await screen.findByRole('button', {
+      name: 'Select 1,000, quantity 10, 1 business day',
+    })
+    const hoveredPrice = screen.getByRole('button', {
+      name: 'Select 2,000, quantity 30, 2 business days',
+    })
+
+    await user.click(selectedPrice)
+    fireEvent.pointerEnter(hoveredPrice)
+
+    expect(selectedPrice).toHaveAttribute('aria-pressed', 'true')
+    expect(hoveredPrice).toHaveAttribute('aria-pressed', 'false')
+    expect(hoveredPrice.closest('td')).toHaveAttribute(
+      'data-hover-highlight',
+      'strong',
+    )
+    expect(getOrderPrice()).toHaveTextContent('1,000')
+
+    fireEvent.pointerLeave(hoveredPrice)
+    fireEvent.pointerEnter(selectedPrice)
+
+    expect(selectedPrice).toHaveAttribute('aria-pressed', 'true')
+    expect(selectedPrice.closest('td')).toHaveAttribute(
+      'data-hover-highlight',
+      'strong',
+    )
+
+    fireEvent.pointerLeave(selectedPrice)
+
+    expect(selectedPrice).toHaveAttribute('aria-pressed', 'true')
+    expect(getOrderPrice()).toHaveTextContent('1,000')
+    expect(document.querySelector('[data-hover-highlight]')).toBeNull()
+  })
+
+  it('highlights expanded rows without fetching and resets hover for a different applied size', async () => {
+    const user = userEvent.setup()
+    const nextRequest = deferred<PriceResponse>()
+    fetchPricesMock
+      .mockResolvedValueOnce(createPrices())
+      .mockReturnValueOnce(nextRequest.promise)
+
+    render(<App />)
+
+    await user.click(await screen.findByRole('button', { name: 'See more' }))
+    const expandedPrice = screen.getByRole('button', {
+      name: 'Select 5,500, quantity 100, 1 business day',
+    })
+    fireEvent.pointerEnter(expandedPrice)
+
+    expect(expandedPrice.closest('td')).toHaveAttribute(
+      'data-hover-highlight',
+      'strong',
+    )
+    expect(fetchPricesMock).toHaveBeenCalledTimes(1)
+
+    await selectPaperSize(user, 'A5')
+    expect(expandedPrice.closest('td')).toHaveAttribute(
+      'data-hover-highlight',
+      'strong',
+    )
+
+    await selectPaperSize(user, 'A4')
+    await user.click(screen.getByRole('button', { name: 'Apply' }))
+    expect(expandedPrice.closest('td')).toHaveAttribute(
+      'data-hover-highlight',
+      'strong',
+    )
+    expect(fetchPricesMock).toHaveBeenCalledTimes(1)
+
+    await applyPaperSize(user, 'A5')
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+
+    await act(async () => {
+      nextRequest.resolve(createPricesFor('A5'))
+    })
+
+    await screen.findByRole('table', { name: 'A5 price table' })
+    expect(document.querySelector('[data-hover-highlight]')).toBeNull()
+    expect(fetchPricesMock).toHaveBeenCalledTimes(2)
   })
 
   it.each([

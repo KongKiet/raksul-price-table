@@ -145,9 +145,10 @@ High-level acceptance criteria:
 - **ID:** T06
 - **Goal:** Implement cell, row, and column hover highlighting.
 - **Dependencies:** T04, T05.
-- **Implementation:** TODO
-- **Review:** PENDING
+- **Implementation:** VERIFIED
+- **Review:** DEFERRED
 - **Shipping:** NOT_SHIPPED
+- **Detailed plan:** [T06](tasks/T06.md)
 
 High-level acceptance criteria:
 

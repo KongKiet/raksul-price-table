@@ -102,13 +102,22 @@
   cursor: pointer;
 }
 
-.priceButton:hover {
-  background: var(--accent-soft);
+.table th.weakHighlight,
+.table td.weakHighlight {
+  background: #f1f6ff;
+}
+
+.table td.strongHighlight {
+  background: #cfe1ff;
 }
 
 .priceButton[aria-pressed='true'] {
   background: var(--accent-soft);
   box-shadow: inset 0 0 0 3px var(--accent);
+}
+
+.table td.strongHighlight .priceButton {
+  background: #cfe1ff;
 }
 
 .priceButton:focus-visible {

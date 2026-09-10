@@ -21,6 +21,7 @@ function App() {
   const [selectedCell, setSelectedCell] = useState<PriceCellIdentity | null>(
     null,
   )
+  const [hoveredCell, setHoveredCell] = useState<PriceCellIdentity | null>(null)
   const [showAllRows, setShowAllRows] = useState(false)
   const { data, error, loading, retry } = usePrices(appliedPaperSize)
   const hasPrices = data?.prices.some((row) => row.length > 0) ?? false
@@ -37,6 +38,7 @@ function App() {
 
     if (draftPaperSize !== appliedPaperSize) {
       setSelectedCell(null)
+      setHoveredCell(null)
       setShowAllRows(false)
       setAppliedPaperSize(draftPaperSize)
     }
@@ -149,6 +151,16 @@ function App() {
               prices={data.prices}
               selectedCell={selectedCell}
               onSelect={setSelectedCell}
+              hoveredCell={hoveredCell}
+              onHover={setHoveredCell}
+              onHoverEnd={(cell) => {
+                setHoveredCell((currentCell) =>
+                  currentCell?.quantity === cell.quantity &&
+                  currentCell.businessDay === cell.businessDay
+                    ? null
+                    : currentCell,
+                )
+              }}
               showAllRows={showAllRows}
               onShowAllRows={() => setShowAllRows(true)}
             />
