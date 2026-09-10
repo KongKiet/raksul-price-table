@@ -25,19 +25,16 @@
 }
 
 .paperBadge {
+  display: grid;
   flex: 0 0 auto;
-  padding: 8px 13px;
-  border-radius: 999px;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+  border-radius: 50%;
   background: var(--accent-soft);
   color: var(--accent);
-  font-size: 0.85rem;
+  font-size: 1rem;
   font-weight: 800;
-}
-
-.panelSummary {
-  display: flex;
-  align-items: center;
-  gap: 16px;
 }
 
 @media (max-width: 640px) {
@@ -47,12 +44,7 @@
   }
 
   .panelHeader {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .panelSummary {
-    width: 100%;
-    justify-content: space-between;
+    align-items: center;
+    flex-direction: row;
   }
 }

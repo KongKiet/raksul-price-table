@@ -16,7 +16,7 @@ export function OrderPriceSummary({ price }: OrderPriceSummaryProps) {
         aria-labelledby="order-price-label"
         aria-live="polite"
       >
-        {price === undefined ? '—' : formatPrice(price)}
+        {price === undefined ? '—' : `¥${formatPrice(price)}`}
       </span>
     </div>
   )

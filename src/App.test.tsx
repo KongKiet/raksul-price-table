@@ -466,6 +466,59 @@ describe('App', () => {
     expect(orderPrice).toHaveTextContent('2,000')
   })
 
+  it('enables Add to Cart only while a cell is selected', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    const addToCartButton = await screen.findByRole('button', {
+      name: 'Add to Cart',
+    })
+    expect(addToCartButton).toBeDisabled()
+
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Select 1,000, quantity 10, 1 business day',
+      }),
+    )
+
+    expect(addToCartButton).toBeEnabled()
+  })
+
+  it('disables Add to Cart again once a different size is applied', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Select 1,000, quantity 10, 1 business day',
+      }),
+    )
+    const addToCartButton = screen.getByRole('button', { name: 'Add to Cart' })
+    expect(addToCartButton).toBeEnabled()
+
+    await applyPaperSize(user, 'A5')
+
+    expect(addToCartButton).toBeDisabled()
+  })
+
+  it('renders a cart icon button that has no visible effect when clicked', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    const cartButton = screen.getByRole('button', { name: 'View cart' })
+    await screen.findByRole('table')
+    await user.click(cartButton)
+
+    expect(screen.getByRole('table')).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
   it('supports native keyboard selection with Enter and Space', async () => {
     const user = userEvent.setup()
     fetchPricesMock.mockResolvedValue(createPrices())
@@ -722,7 +775,10 @@ describe('App', () => {
 
     expect(screen.getByLabelText('Paper size')).toHaveValue('A5')
     expect(
-      screen.getByRole('heading', { name: 'A4 price table' }),
+      screen.getByRole('heading', { name: 'Price table' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('table', { name: 'A4 price table' }),
     ).toBeInTheDocument()
     expect(screen.queryByRole('table', { name: 'A5 price table' })).toBeNull()
     expect(fetchPricesMock).toHaveBeenCalledTimes(1)
@@ -747,7 +803,7 @@ describe('App', () => {
       )
       expect(screen.queryByRole('table')).not.toBeInTheDocument()
       expect(
-        screen.getByRole('heading', { name: `${paperSize} price table` }),
+        screen.getByRole('heading', { name: 'Price table' }),
       ).toBeInTheDocument()
       expect(fetchPricesMock).toHaveBeenLastCalledWith(
         paperSize,

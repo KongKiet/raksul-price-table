@@ -37,6 +37,14 @@
   font-size: 1.05rem;
 }
 
+.topRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
 @media (max-width: 640px) {
   .page {
     padding: 36px 14px;
@@ -44,5 +52,11 @@
 
   .intro {
     margin-bottom: 26px;
+  }
+
+  .topRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
   }
 }

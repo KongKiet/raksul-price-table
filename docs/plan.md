@@ -164,7 +164,7 @@ High-level acceptance criteria:
 - **Dependencies:** T00, T01, T02, T03, T04, T05, T06.
 - **Implementation:** VERIFIED
 - **Review:** DEFERRED
-- **Shipping:** NOT_SHIPPED
+- **Shipping:** SHIPPED
 - **Detailed plan:** [T07](tasks/T07.md)
 
 High-level acceptance criteria:
@@ -180,8 +180,8 @@ High-level acceptance criteria:
 - **ID:** T08
 - **Goal:** Update the UI layout to accommodate future cart logic: an Add to Cart action area below the table, a restyled `appliedPaperSize` badge, and a cart icon above the table.
 - **Dependencies:** T07.
-- **Implementation:** PLANNED
-- **Review:** PENDING
+- **Implementation:** VERIFIED
+- **Review:** DEFERRED
 - **Shipping:** NOT_SHIPPED
 - **Detailed plan:** [T08](tasks/T08.md)
 

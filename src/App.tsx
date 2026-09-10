@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 
 import { type PaperSize } from './api/prices'
 import { type PriceCellIdentity } from './components/PriceTable/PriceTable'
+import { CartButton } from './components/CartButton/CartButton'
 import { PaperSizeForm } from './components/PaperSizeForm/PaperSizeForm'
 import { PricePanel } from './components/PricePanel/PricePanel'
 import { usePrices } from './hooks/usePrices'
@@ -48,12 +49,15 @@ function App() {
           </p>
         </header>
 
-        <PaperSizeForm
-          paperSizes={PAPER_SIZES}
-          draftPaperSize={draftPaperSize}
-          onDraftPaperSizeChange={setDraftPaperSize}
-          onSubmit={applyPaperSize}
-        />
+        <div className={styles.topRow}>
+          <PaperSizeForm
+            paperSizes={PAPER_SIZES}
+            draftPaperSize={draftPaperSize}
+            onDraftPaperSizeChange={setDraftPaperSize}
+            onSubmit={applyPaperSize}
+          />
+          <CartButton />
+        </div>
 
         <PricePanel
           appliedPaperSize={appliedPaperSize}

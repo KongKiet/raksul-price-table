@@ -1,5 +1,5 @@
 import { type PaperSize, type PriceResponse } from '../../api/prices'
-import { OrderPriceSummary } from '../OrderPriceSummary/OrderPriceSummary'
+import { AddToCartBar } from '../AddToCartBar/AddToCartBar'
 import { PriceStatusMessage } from '../PriceStatusMessage/PriceStatusMessage'
 import { PriceTable, type PriceCellIdentity } from '../PriceTable/PriceTable'
 import styles from './PricePanel.module.css'
@@ -46,16 +46,13 @@ export function PricePanel({
       <div className={styles.panelHeader}>
         <div>
           <h2 className={styles.panelTitle} id="price-table-heading">
-            {appliedPaperSize} price table
+            Price table
           </h2>
           <p className={styles.panelDescription}>
             Prices by quantity and delivery business days
           </p>
         </div>
-        <div className={styles.panelSummary}>
-          <OrderPriceSummary price={selectedPrice} />
-          <span className={styles.paperBadge}>{appliedPaperSize}</span>
-        </div>
+        <span className={styles.paperBadge}>{appliedPaperSize}</span>
       </div>
 
       {loading && (
@@ -83,6 +80,8 @@ export function PricePanel({
           onShowAllRows={onShowAllRows}
         />
       )}
+
+      <AddToCartBar selectedCell={selectedCell} selectedPrice={selectedPrice} />
     </section>
   )
 }
