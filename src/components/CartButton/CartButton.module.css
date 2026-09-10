@@ -1,6 +1,37 @@
-.cartButton {
-  display: inline-grid;
+.wrapper {
+  position: relative;
+  display: inline-flex;
   flex: 0 0 auto;
+}
+
+.glow {
+  position: absolute;
+  inset: -4px;
+  border-radius: 14px;
+  animation: cartGlow 3000ms ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes cartGlow {
+  from {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+
+  to {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow {
+    animation: none;
+  }
+}
+
+.cartButton {
+  position: relative;
+  z-index: 1;
+  display: inline-grid;
   place-items: center;
   width: 44px;
   height: 44px;
@@ -9,6 +40,25 @@
   color: var(--text-strong);
   background: var(--surface);
   cursor: pointer;
+}
+
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  z-index: 2;
+  display: inline-grid;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  color: white;
+  background: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .cartButton:hover {

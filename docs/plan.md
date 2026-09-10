@@ -182,7 +182,7 @@ High-level acceptance criteria:
 - **Dependencies:** T07.
 - **Implementation:** VERIFIED
 - **Review:** DEFERRED
-- **Shipping:** NOT_SHIPPED
+- **Shipping:** COMMITTED
 - **Detailed plan:** [T08](tasks/T08.md)
 
 High-level acceptance criteria:
@@ -197,10 +197,10 @@ High-level acceptance criteria:
 ## T09 — Add to Cart functionality
 
 - **ID:** T09
-- **Goal:** Implement cart state and interactions: adding items with a success notification, and a cart contents modal with quantity and removal controls plus a disabled-when-empty Checkout button.
+- **Goal:** Implement cart state and interactions: adding items with a success notification, a cart contents modal with quantity and removal controls plus a disabled-when-empty Checkout button, and persisting the cart to `localStorage` so a page refresh does not clear it.
 - **Dependencies:** T08.
-- **Implementation:** PLANNED
-- **Review:** PENDING
+- **Implementation:** VERIFIED
+- **Review:** DEFERRED
 - **Shipping:** NOT_SHIPPED
 - **Detailed plan:** [T09](tasks/T09.md)
 
@@ -210,7 +210,7 @@ High-level acceptance criteria:
 - Clicking the cart icon opens a modal listing current cart contents; the modal handles an empty-cart state and scrolls when the list is long, without a UI framework or component library.
 - Each cart line shows paper size, quantity, and business days, with controls to increase or decrease quantity and to remove the line.
 - The modal shows a computed total price (reusing the existing price formatter) and a Checkout button at the bottom; Checkout is disabled when the cart is empty and otherwise performs no real checkout processing.
-- Cart state uses plain React state, is not persisted across reloads, and introduces no routing, global store, or backend, consistent with existing scope boundaries.
+- Cart state uses plain React state, persisted to `localStorage` so it survives a page refresh, and introduces no routing, global store, or backend, consistent with existing scope boundaries.
 
 ## T10 — Accessibility, regression verification, browser QA, and README
 
@@ -228,4 +228,4 @@ High-level acceptance criteria:
 - Run formatting checks, lint, tests, and the production build; record results and resolve blocking failures without weakening checks.
 - Perform browser QA in the latest Chrome or Firefox when available and compare against the documented visual reference when available. Record browser/version and findings, or the manual verification still needed and missing reference limitation.
 - Update README with setup and workflow commands, product behavior, relevant assumptions, verification guidance, and known limitations while preserving applicable existing content.
-- Confirm cart add-to-cart, notification, and cart-contents modal behavior (T07–T09) are covered by the checks above; checkout processing, routing, a global store, and a backend remain outside scope.
+- Confirm cart add-to-cart, notification, cart-contents modal behavior, and `localStorage` persistence across a refresh (T07–T09) are covered by the checks above; checkout processing, routing, a global store, and a backend remain outside scope.

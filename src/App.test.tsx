@@ -13,6 +13,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PaperSize, PriceResponse } from './api/prices'
 import { fetchPrices } from './api/prices'
 import App from './App'
+import { CART_STORAGE_KEY } from './hooks/useCart'
 
 vi.mock('./api/prices', () => ({
   fetchPrices: vi.fn(),
@@ -101,6 +102,7 @@ function getOrderPrice() {
 
 beforeEach(() => {
   fetchPricesMock.mockReset()
+  window.localStorage.clear()
 })
 
 describe('App', () => {
@@ -443,8 +445,7 @@ describe('App', () => {
 
     render(<App />)
 
-    const orderPrice = getOrderPrice()
-    expect(orderPrice).toHaveTextContent('\u2014')
+    expect(screen.queryByText('Order price')).not.toBeInTheDocument()
 
     const firstPrice = await screen.findByRole('button', {
       name: 'Select 1,000, quantity 10, 1 business day',
@@ -452,7 +453,8 @@ describe('App', () => {
     await user.click(firstPrice)
 
     expect(firstPrice).toHaveAttribute('aria-pressed', 'true')
-    expect(orderPrice).toHaveTextContent('1,000')
+    const orderPrice = getOrderPrice()
+    expect(orderPrice).toHaveTextContent('¥1,000')
     expect(fetchPricesMock).toHaveBeenCalledTimes(1)
 
     const replacement = screen.getByRole('button', {
@@ -505,7 +507,7 @@ describe('App', () => {
     expect(addToCartButton).toBeDisabled()
   })
 
-  it('renders a cart icon button that has no visible effect when clicked', async () => {
+  it('opens the cart modal from the cart icon without affecting the table', async () => {
     const user = userEvent.setup()
     fetchPricesMock.mockResolvedValue(createPrices())
 
@@ -516,7 +518,455 @@ describe('App', () => {
     await user.click(cartButton)
 
     expect(screen.getByRole('table')).toBeInTheDocument()
+    expect(
+      screen.getByRole('dialog', { name: 'Your cart' }),
+    ).toBeInTheDocument()
+  })
+
+  it('adds the selected cell to the cart, shows a notification, and lists it in the cart modal', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Select 1,000, quantity 10, 1 business day',
+      }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Add to Cart' }))
+
+    const notification = screen.getByRole('status')
+    expect(notification).toHaveTextContent('Added to cart')
+    expect(notification).toHaveTextContent('A4, quantity 10, 1 business day')
+
+    await user.click(screen.getByRole('button', { name: 'View cart' }))
+    const dialog = screen.getByRole('dialog', { name: 'Your cart' })
+
+    expect(dialog).toHaveTextContent('A4')
+    expect(dialog).toHaveTextContent('Quantity 10')
+    expect(dialog).toHaveTextContent('1 business day')
+    expect(dialog).toHaveTextContent('1,000')
+  })
+
+  it('supports keyboard activation of Add to Cart', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Select 1,000, quantity 10, 1 business day',
+      }),
+    )
+
+    const addToCartButton = screen.getByRole('button', { name: 'Add to Cart' })
+    addToCartButton.focus()
+    await user.keyboard('{Enter}')
+
+    expect(screen.getByRole('status')).toHaveTextContent('Added to cart')
+  })
+
+  it('auto-dismisses the Added to cart notification after a short duration', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Select 1,000, quantity 10, 1 business day',
+      }),
+    )
+
+    vi.useFakeTimers()
+    fireEvent.click(screen.getByRole('button', { name: 'Add to Cart' }))
+
+    const notification = screen.getByRole('status')
+    expect(notification).toHaveTextContent('Added to cart')
+
+    act(() => {
+      vi.advanceTimersByTime(3000)
+    })
+
+    expect(notification.className).toMatch(/closing/)
+    expect(notification).toBeInTheDocument()
+
+    act(() => {
+      vi.advanceTimersByTime(300)
+    })
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  it('dismisses the Added to cart notification via its close button', async () => {
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    const price = await screen.findByRole('button', {
+      name: 'Select 1,000, quantity 10, 1 business day',
+    })
+    fireEvent.click(price)
+    fireEvent.click(screen.getByRole('button', { name: 'Add to Cart' }))
+
+    const notification = screen.getByRole('status')
+    expect(notification).toBeInTheDocument()
+
+    vi.useFakeTimers()
+    fireEvent.click(screen.getByRole('button', { name: 'Close notification' }))
+
+    expect(notification.className).toMatch(/closing/)
+
+    act(() => {
+      vi.advanceTimersByTime(300)
+    })
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  it('increments the same line instead of duplicating it when added to cart twice', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Select 1,000, quantity 10, 1 business day',
+      }),
+    )
+    const addToCartButton = screen.getByRole('button', { name: 'Add to Cart' })
+    await user.click(addToCartButton)
+    await user.click(addToCartButton)
+
+    await user.click(screen.getByRole('button', { name: 'View cart' }))
+    const dialog = screen.getByRole('dialog', { name: 'Your cart' })
+
+    expect(within(dialog).getAllByText('A4')).toHaveLength(1)
+    expect(dialog).toHaveTextContent('2,000')
+  })
+
+  it('closes the cart modal via the close button and via Escape', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    await screen.findByRole('table')
+    await user.click(screen.getByRole('button', { name: 'View cart' }))
+    expect(
+      screen.getByRole('dialog', { name: 'Your cart' }),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Close cart' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'View cart' }))
+    expect(
+      screen.getByRole('dialog', { name: 'Your cart' }),
+    ).toBeInTheDocument()
+
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('disables Checkout for an empty cart and enables it once an item is added', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    await screen.findByRole('table')
+    await user.click(screen.getByRole('button', { name: 'View cart' }))
+
+    const dialog = screen.getByRole('dialog', { name: 'Your cart' })
+    expect(within(dialog).getByText('Your cart is empty.')).toBeInTheDocument()
+    expect(
+      within(dialog).getByRole('button', { name: 'Checkout' }),
+    ).toBeDisabled()
+
+    await user.click(within(dialog).getByRole('button', { name: 'Close cart' }))
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Select 1,000, quantity 10, 1 business day',
+      }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Add to Cart' }))
+    await user.click(screen.getByRole('button', { name: 'View cart' }))
+
+    const reopenedDialog = screen.getByRole('dialog', { name: 'Your cart' })
+    expect(
+      within(reopenedDialog).getByRole('button', { name: 'Checkout' }),
+    ).toBeEnabled()
+  })
+
+  it('increases and decreases cart quantity, removing the line when decreased to zero', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Select 1,000, quantity 10, 1 business day',
+      }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Add to Cart' }))
+    await user.click(screen.getByRole('button', { name: 'View cart' }))
+
+    const dialog = screen.getByRole('dialog', { name: 'Your cart' })
+    const increaseButton = within(dialog).getByRole('button', {
+      name: 'Increase quantity in cart for A4, quantity 10, 1 business day',
+    })
+    const decreaseButton = within(dialog).getByRole('button', {
+      name: 'Decrease quantity in cart for A4, quantity 10, 1 business day',
+    })
+
+    await user.click(increaseButton)
+    expect(dialog).toHaveTextContent('2,000')
+
+    await user.click(decreaseButton)
+    await user.click(decreaseButton)
+
+    expect(within(dialog).queryByText('A4')).not.toBeInTheDocument()
+    expect(within(dialog).getByText('Your cart is empty.')).toBeInTheDocument()
+  })
+
+  it('removes a line via its remove control regardless of quantity', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Select 1,000, quantity 10, 1 business day',
+      }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Add to Cart' }))
+    await user.click(screen.getByRole('button', { name: 'View cart' }))
+
+    const dialog = screen.getByRole('dialog', { name: 'Your cart' })
+    await user.click(
+      within(dialog).getByRole('button', {
+        name: 'Increase quantity in cart for A4, quantity 10, 1 business day',
+      }),
+    )
+    await user.click(
+      within(dialog).getByRole('button', {
+        name: 'Remove A4, quantity 10, 1 business day from cart',
+      }),
+    )
+
+    expect(within(dialog).getByText('Your cart is empty.')).toBeInTheDocument()
+  })
+
+  it('computes the total across multiple distinct cart lines', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Select 1,000, quantity 10, 1 business day',
+      }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Add to Cart' }))
+
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Select 1,500, quantity 20, 1 business day',
+      }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Add to Cart' }))
+
+    await user.click(screen.getByRole('button', { name: 'View cart' }))
+    const dialog = screen.getByRole('dialog', { name: 'Your cart' })
+
+    expect(dialog).toHaveTextContent('¥2,500')
+  })
+
+  it('lists cart lines newest first', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Select 1,000, quantity 10, 1 business day',
+      }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Add to Cart' }))
+
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Select 1,500, quantity 20, 1 business day',
+      }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Add to Cart' }))
+
+    await user.click(screen.getByRole('button', { name: 'View cart' }))
+    const dialog = screen.getByRole('dialog', { name: 'Your cart' })
+
+    const removeButtons = within(dialog).getAllByRole('button', {
+      name: /Remove/,
+    })
+    expect(removeButtons).toHaveLength(2)
+    expect(removeButtons[0]).toHaveAccessibleName(
+      'Remove A4, quantity 20, 1 business day from cart',
+    )
+    expect(removeButtons[1]).toHaveAccessibleName(
+      'Remove A4, quantity 10, 1 business day from cart',
+    )
+  })
+
+  it('lights up the cart icon after adding an item', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    expect(screen.queryByTestId('cart-glow')).not.toBeInTheDocument()
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Select 1,000, quantity 10, 1 business day',
+      }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Add to Cart' }))
+
+    expect(screen.getByTestId('cart-glow')).toBeInTheDocument()
+  })
+
+  it('shows a cart badge with the total item count and hides it when the cart is emptied', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    expect(screen.queryByTestId('cart-badge')).not.toBeInTheDocument()
+
+    const firstPrice = await screen.findByRole('button', {
+      name: 'Select 1,000, quantity 10, 1 business day',
+    })
+    await user.click(firstPrice)
+    await user.click(screen.getByRole('button', { name: 'Add to Cart' }))
+
+    expect(screen.getByTestId('cart-badge')).toHaveTextContent('1')
+
+    await user.click(screen.getByRole('button', { name: 'Add to Cart' }))
+
+    expect(screen.getByTestId('cart-badge')).toHaveTextContent('2')
+
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Select 1,500, quantity 20, 1 business day',
+      }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Add to Cart' }))
+
+    expect(screen.getByTestId('cart-badge')).toHaveTextContent('3')
+
+    await user.click(screen.getByRole('button', { name: 'View cart' }))
+    const dialog = screen.getByRole('dialog', { name: 'Your cart' })
+
+    for (const removeButton of within(dialog).getAllByRole('button', {
+      name: /Remove/,
+    })) {
+      await user.click(removeButton)
+    }
+
+    expect(screen.queryByTestId('cart-badge')).not.toBeInTheDocument()
+  })
+
+  it('persists the cart across a page reload', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    const { unmount } = render(<App />)
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Select 1,000, quantity 10, 1 business day',
+      }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Add to Cart' }))
+
+    unmount()
+    render(<App />)
+
+    await screen.findByRole('table')
+    await user.click(screen.getByRole('button', { name: 'View cart' }))
+    const dialog = screen.getByRole('dialog', { name: 'Your cart' })
+
+    expect(dialog).toHaveTextContent('A4')
+    expect(dialog).toHaveTextContent('Quantity 10')
+  })
+
+  it('restores a valid cart already stored in localStorage on load', async () => {
+    window.localStorage.setItem(
+      CART_STORAGE_KEY,
+      JSON.stringify([
+        {
+          paperSize: 'A4',
+          quantity: 10,
+          businessDay: 1,
+          price: 1000,
+          cartQuantity: 3,
+        },
+      ]),
+    )
+
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    await screen.findByRole('table')
+    await user.click(screen.getByRole('button', { name: 'View cart' }))
+    const dialog = screen.getByRole('dialog', { name: 'Your cart' })
+
+    expect(dialog).toHaveTextContent('A4')
+    expect(dialog).toHaveTextContent('3,000')
+  })
+
+  it('starts with an empty cart when stored data is missing or invalid', async () => {
+    window.localStorage.setItem(CART_STORAGE_KEY, '{not-json')
+
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    await screen.findByRole('table')
+    await user.click(screen.getByRole('button', { name: 'View cart' }))
+
+    expect(screen.getByRole('dialog', { name: 'Your cart' })).toHaveTextContent(
+      'Your cart is empty.',
+    )
+  })
+
+  it('ignores stored cart entries with an invalid shape', async () => {
+    window.localStorage.setItem(
+      CART_STORAGE_KEY,
+      JSON.stringify([{ paperSize: 'A4' }, 'not-an-object', 42]),
+    )
+
+    const user = userEvent.setup()
+    fetchPricesMock.mockResolvedValue(createPrices())
+
+    render(<App />)
+
+    await screen.findByRole('table')
+    await user.click(screen.getByRole('button', { name: 'View cart' }))
+
+    expect(screen.getByRole('dialog', { name: 'Your cart' })).toHaveTextContent(
+      'Your cart is empty.',
+    )
   })
 
   it('supports native keyboard selection with Enter and Space', async () => {
@@ -579,7 +1029,7 @@ describe('App', () => {
     expect(
       within(sparseRow as HTMLTableRowElement).getAllByRole('button'),
     ).toHaveLength(2)
-    expect(getOrderPrice()).toHaveTextContent('\u2014')
+    expect(screen.queryByText('Order price')).not.toBeInTheDocument()
   })
 
   it('preserves selection for draft and same-size Apply changes', async () => {
@@ -620,7 +1070,7 @@ describe('App', () => {
     )
     await applyPaperSize(user, 'A5')
 
-    expect(getOrderPrice()).toHaveTextContent('\u2014')
+    expect(screen.queryByText('Order price')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { pressed: true })).toBeNull()
 
     await act(async () => {
@@ -633,7 +1083,7 @@ describe('App', () => {
     expect(
       within(nextTable).queryByRole('button', { pressed: true }),
     ).toBeNull()
-    expect(getOrderPrice()).toHaveTextContent('\u2014')
+    expect(screen.queryByText('Order price')).not.toBeInTheDocument()
   })
 
   it('selects an expanded-row price and clears it with a size change', async () => {
@@ -659,7 +1109,7 @@ describe('App', () => {
       name: 'A5 price table',
     })
     expect(within(nextTable).getAllByRole('rowheader')).toHaveLength(5)
-    expect(getOrderPrice()).toHaveTextContent('\u2014')
+    expect(screen.queryByText('Order price')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'See more' })).toBeInTheDocument()
   })
 

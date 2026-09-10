@@ -59,4 +59,9 @@
     align-items: stretch;
     gap: 12px;
   }
+
+  .topRow > :last-child {
+    order: -1;
+    align-self: flex-end;
+  }
 }

@@ -61,8 +61,15 @@ The user requested three additional advanced tasks that bring cart behavior into
 - A cart modal, opened from a new cart icon, lists cart contents with quantity increase/decrease and removal controls, a total price, and a Checkout button.
 - Still outside scope: real checkout/payment processing, routing, and a backend.
 - Cart state uses React local state, consistent with the existing stack decision; it does not introduce a global store.
-- Cart contents are not persisted across page reloads; no storage mechanism was requested.
 - The cart icon and any status/notification UI are built with native elements and existing CSS Modules/tokens, consistent with the "no UI component libraries" restriction.
+
+### Cart persistence (added 2026-09-10)
+
+The user requested that cart contents survive a page refresh.
+
+- Cart contents are persisted to the browser's `localStorage` so a page refresh restores the same cart (line items and quantities) instead of clearing it. This supersedes the earlier "not persisted across page reloads" assumption recorded above.
+- Persistence is `localStorage` only: cart state itself remains plain React local state during the session (per the decision above); `localStorage` is read once to initialize that state and written on every cart change. This does not introduce a global store, context, or backend, and does not conflict with the "React local state" or "no backend" scope boundaries.
+- If `localStorage` is unavailable, empty, or holds data that fails to parse or validate, the cart starts empty rather than the app crashing or surfacing an error.
 
 ## Current preparation status
 

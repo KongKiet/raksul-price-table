@@ -18,6 +18,7 @@ interface PricePanelProps {
   showAllRows: boolean
   onShowAllRows: () => void
   selectedPrice: number | undefined
+  onAddToCart: () => void
 }
 
 export function PricePanel({
@@ -34,6 +35,7 @@ export function PricePanel({
   showAllRows,
   onShowAllRows,
   selectedPrice,
+  onAddToCart,
 }: PricePanelProps) {
   const hasPrices = data?.prices.some((row) => row.length > 0) ?? false
 
@@ -81,7 +83,11 @@ export function PricePanel({
         />
       )}
 
-      <AddToCartBar selectedCell={selectedCell} selectedPrice={selectedPrice} />
+      <AddToCartBar
+        selectedCell={selectedCell}
+        selectedPrice={selectedPrice}
+        onAddToCart={onAddToCart}
+      />
     </section>
   )
 }
