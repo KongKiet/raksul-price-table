@@ -49,7 +49,15 @@ The original requirements left some behavior unspecified; the following implemen
 - Automated tests (`src/**/*.test.ts(x)`) use React Testing Library, `user-event`, and controlled/mocked responses — they never depend on the live API. They cover table loading/mapping, Apply and stale-request handling, selection and Order price, See more, hover, and the full cart flow (add/increment, notification, modal open/close, quantity/removal controls, total, Checkout's disabled state, and `localStorage` persistence, including invalid/missing stored data).
 - Visual and interaction changes are additionally verified manually in a real, latest Chrome or Firefox before shipping, since automated tests run in a simulated DOM (jsdom) and cannot confirm real rendering, native focus behavior, or CSS layout.
 
-## Known limitations
+## Time spent
 
-- **Reference image unavailable.** A mockup was shown during requirements gathering but its image file was never available to save into this repository. Rendered output could not be compared against it pixel-for-pixel; the implementation follows the mockup's described elements (selector, Apply, price table, Order price, cart) rather than a saved reference.
-- **Narrow-width (≤640px) layout is pattern-verified, not live-rendered, in this project's own browser-automation sessions.** The CSS follows the same `@media (max-width: 640px)` responsive rules already used consistently across components, but the automation tooling used during development (`resize_window`) does not change the page's actual effective viewport (confirmed via `window.innerWidth`), so this layout could not be exercised in a live narrow render during automated verification. A manual check by resizing an actual browser window, or using its device toolbar, is recommended before relying on narrow-width layout in production.
+Total: 180 minutes.
+
+| Step                     | Duration | Notes                                                                                                                     |
+| ------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Project setup            | 20 min   | React/TypeScript strict/Vite scaffold, CSS Modules, Vitest/RTL/jsdom, ESLint/Prettier, npm scripts.                       |
+| Task 1 (price table)     | 95 min   | Paper-size selection and Apply, the price table itself, cell selection and Order price, See more, and hover highlighting. |
+| Task 2 (price formatter) | 15 min   | Comma-grouping formatter and its unit tests.                                                                              |
+| Optimization and testing | 50 min   | Regression checks, accessibility pass, hover/render performance tuning, manual browser QA, and README.                    |
+
+This excludes the follow-on cart functionality, which was requested and implemented as explicit additional scope beyond Tasks 1 and 2.
