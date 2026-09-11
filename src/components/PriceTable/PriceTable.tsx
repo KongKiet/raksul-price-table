@@ -1,3 +1,5 @@
+import { useMemo, useState } from 'react'
+
 import type { PriceRow } from '../../api/prices'
 import { formatPrice } from '../../utils/formatPrice'
 import styles from './PriceTable.module.css'
@@ -7,9 +9,6 @@ interface PriceTableProps {
   prices: PriceRow[]
   selectedCell: PriceCellIdentity | null
   onSelect: (cell: PriceCellIdentity) => void
-  hoveredCell: PriceCellIdentity | null
-  onHover: (cell: PriceCellIdentity) => void
-  onHoverEnd: (cell: PriceCellIdentity) => void
   showAllRows: boolean
   onShowAllRows: () => void
 }
@@ -30,16 +29,35 @@ export function PriceTable({
   prices,
   selectedCell,
   onSelect,
-  hoveredCell,
-  onHover,
-  onHoverEnd,
   showAllRows,
   onShowAllRows,
 }: PriceTableProps) {
-  const availableRows = prices.filter((row) => row.length > 0)
+  const [hoveredCell, setHoveredCell] = useState<PriceCellIdentity | null>(
+    null,
+  )
+  const [renderedPaperSize, setRenderedPaperSize] = useState(paperSize)
+
+  if (paperSize !== renderedPaperSize) {
+    setRenderedPaperSize(paperSize)
+    setHoveredCell(null)
+  }
+
+  const availableRows = useMemo(
+    () => prices.filter((row) => row.length > 0),
+    [prices],
+  )
   const rows = showAllRows ? availableRows : availableRows.slice(0, 5)
   const hasMoreRows = !showAllRows && availableRows.length > rows.length
-  const businessDays = getBusinessDays(prices)
+  const businessDays = useMemo(() => getBusinessDays(prices), [prices])
+
+  function handleHoverEnd(cell: PriceCellIdentity) {
+    setHoveredCell((currentCell) =>
+      currentCell?.quantity === cell.quantity &&
+      currentCell.businessDay === cell.businessDay
+        ? null
+        : currentCell,
+    )
+  }
 
   return (
     <>
@@ -113,10 +131,10 @@ export function PriceTable({
                             }
                             onClick={() => onSelect({ quantity, businessDay })}
                             onPointerEnter={() =>
-                              onHover({ quantity, businessDay })
+                              setHoveredCell({ quantity, businessDay })
                             }
                             onPointerLeave={() =>
-                              onHoverEnd({ quantity, businessDay })
+                              handleHoverEnd({ quantity, businessDay })
                             }
                           >
                             {formatPrice(entry.price)}

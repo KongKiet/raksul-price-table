@@ -12,9 +12,6 @@ interface PricePanelProps {
   onRetry: () => void
   selectedCell: PriceCellIdentity | null
   onSelect: (cell: PriceCellIdentity) => void
-  hoveredCell: PriceCellIdentity | null
-  onHover: (cell: PriceCellIdentity) => void
-  onHoverEnd: (cell: PriceCellIdentity) => void
   showAllRows: boolean
   onShowAllRows: () => void
   selectedPrice: number | undefined
@@ -29,9 +26,6 @@ export function PricePanel({
   onRetry,
   selectedCell,
   onSelect,
-  hoveredCell,
-  onHover,
-  onHoverEnd,
   showAllRows,
   onShowAllRows,
   selectedPrice,
@@ -75,9 +69,6 @@ export function PricePanel({
           prices={data.prices}
           selectedCell={selectedCell}
           onSelect={onSelect}
-          hoveredCell={hoveredCell}
-          onHover={onHover}
-          onHoverEnd={onHoverEnd}
           showAllRows={showAllRows}
           onShowAllRows={onShowAllRows}
         />

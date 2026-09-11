@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 
 import { type PaperSize } from './api/prices'
 import { type PriceCellIdentity } from './components/PriceTable/PriceTable'
@@ -26,7 +26,6 @@ function App() {
   const [selectedCell, setSelectedCell] = useState<PriceCellIdentity | null>(
     null,
   )
-  const [hoveredCell, setHoveredCell] = useState<PriceCellIdentity | null>(null)
   const [showAllRows, setShowAllRows] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [notification, setNotification] =
@@ -35,13 +34,17 @@ function App() {
   const [cartGlowTrigger, setCartGlowTrigger] = useState(0)
   const { data, error, loading, retry } = usePrices(appliedPaperSize)
   const cart = useCart()
-  const selectedPrice = data?.prices
-    .flatMap((row) => row)
-    .find(
-      (entry) =>
-        entry.quantity === selectedCell?.quantity &&
-        entry.business_day === selectedCell.businessDay,
-    )?.price
+  const selectedPrice = useMemo(
+    () =>
+      data?.prices
+        .flatMap((row) => row)
+        .find(
+          (entry) =>
+            entry.quantity === selectedCell?.quantity &&
+            entry.business_day === selectedCell.businessDay,
+        )?.price,
+    [data, selectedCell],
+  )
 
   useEffect(() => {
     if (notification === null) {
@@ -74,7 +77,6 @@ function App() {
 
     if (draftPaperSize !== appliedPaperSize) {
       setSelectedCell(null)
-      setHoveredCell(null)
       setShowAllRows(false)
       setAppliedPaperSize(draftPaperSize)
     }
@@ -133,16 +135,6 @@ function App() {
           onRetry={retry}
           selectedCell={selectedCell}
           onSelect={setSelectedCell}
-          hoveredCell={hoveredCell}
-          onHover={setHoveredCell}
-          onHoverEnd={(cell) => {
-            setHoveredCell((currentCell) =>
-              currentCell?.quantity === cell.quantity &&
-              currentCell.businessDay === cell.businessDay
-                ? null
-                : currentCell,
-            )
-          }}
           showAllRows={showAllRows}
           onShowAllRows={() => setShowAllRows(true)}
           selectedPrice={selectedPrice}

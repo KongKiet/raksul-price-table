@@ -27,20 +27,6 @@ export function usePrices(paperSize: PaperSize) {
 
     latestRequestRef.current = requestId
 
-    queueMicrotask(() => {
-      if (
-        latestRequestRef.current === requestId &&
-        !controller.signal.aborted
-      ) {
-        setState({
-          paperSize,
-          data: null,
-          error: null,
-          loading: true,
-        })
-      }
-    })
-
     void fetchPrices(paperSize, controller.signal)
       .then((data) => {
         if (
