@@ -51,6 +51,14 @@
   border-bottom: 0;
 }
 
+.table tbody tr:last-child td:last-child {
+  border-bottom-right-radius: 17px;
+}
+
+.table tbody tr:last-child td:last-child .priceButton {
+  border-bottom-right-radius: 17px;
+}
+
 .table thead th {
   background: var(--table-heading);
   color: var(--text-muted);
@@ -150,13 +158,13 @@
 }
 
 .seeMoreButton {
-  min-height: 44px;
-  padding: 10px 22px;
+  padding: 6px 16px;
   border: 1px solid var(--border-strong);
-  border-radius: 10px;
+  border-radius: 8px;
   color: var(--accent);
   background: var(--surface);
   font: inherit;
+  font-size: 0.85rem;
   font-weight: 750;
   cursor: pointer;
 }
@@ -185,5 +193,13 @@
   .priceButton {
     min-height: 51px;
     padding: 15px 16px;
+  }
+
+  .table tbody tr:last-child td:last-child {
+    border-bottom-right-radius: 11px;
+  }
+
+  .table tbody tr:last-child td:last-child .priceButton {
+    border-bottom-right-radius: 11px;
   }
 }
