@@ -2,6 +2,10 @@
 
 An interactive price table for paper printing products (A4, A5, B4, B5), organized by delivery business days and quantity, built with React, TypeScript, and Vite.
 
+## Preview
+
+![Price table preview](src/assets/review.png)
+
 ## Setup
 
 ```sh
