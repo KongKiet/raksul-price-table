@@ -13,16 +13,16 @@ The dev server prints a local URL (Vite picks the next free port starting at 517
 
 ## Workflow commands
 
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Start the Vite dev server with HMR. |
-| `npm run build` | Type-check (`tsc -b`) and produce a production build (`vite build`) in `dist/`. |
-| `npm run preview` | Serve the production build locally. |
-| `npm run lint` | Run ESLint over the project. |
-| `npm run test` | Run the full Vitest suite once. |
-| `npm run test:watch` | Run Vitest in watch mode. |
-| `npm run format` | Apply Prettier formatting. |
-| `npm run format:check` | Check Prettier formatting without writing. |
+| Command                | Purpose                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------- |
+| `npm run dev`          | Start the Vite dev server with HMR.                                             |
+| `npm run build`        | Type-check (`tsc -b`) and produce a production build (`vite build`) in `dist/`. |
+| `npm run preview`      | Serve the production build locally.                                             |
+| `npm run lint`         | Run ESLint over the project.                                                    |
+| `npm run test`         | Run the full Vitest suite once.                                                 |
+| `npm run test:watch`   | Run Vitest in watch mode.                                                       |
+| `npm run format`       | Apply Prettier formatting.                                                      |
+| `npm run format:check` | Check Prettier formatting without writing.                                      |
 
 ## Product behavior
 

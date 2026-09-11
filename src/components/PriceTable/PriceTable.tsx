@@ -32,9 +32,7 @@ export function PriceTable({
   showAllRows,
   onShowAllRows,
 }: PriceTableProps) {
-  const [hoveredCell, setHoveredCell] = useState<PriceCellIdentity | null>(
-    null,
-  )
+  const [hoveredCell, setHoveredCell] = useState<PriceCellIdentity | null>(null)
   const [renderedPaperSize, setRenderedPaperSize] = useState(paperSize)
 
   if (paperSize !== renderedPaperSize) {
