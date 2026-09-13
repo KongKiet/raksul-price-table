@@ -45,6 +45,12 @@
   outline-offset: 3px;
 }
 
+.retryButton:disabled {
+  background: var(--border-strong);
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);

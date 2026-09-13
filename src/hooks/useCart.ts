@@ -18,7 +18,7 @@ export interface CartItem {
 }
 
 export const CART_STORAGE_KEY = 'raksul-price-table:cart'
-const PAPER_SIZES: readonly PaperSize[] = ['A4', 'A5', 'B4', 'B5']
+const PAPER_SIZES: readonly PaperSize[] = ['A4', 'A5', 'B4', 'B5', 'B6']
 
 function isPositiveInteger(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value > 0

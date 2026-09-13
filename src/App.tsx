@@ -11,7 +11,7 @@ import { useCart } from './hooks/useCart'
 import { usePrices } from './hooks/usePrices'
 import styles from './App.module.css'
 
-const PAPER_SIZES: readonly PaperSize[] = ['A4', 'A5', 'B4', 'B5']
+const PAPER_SIZES: readonly PaperSize[] = ['A4', 'A5', 'B4', 'B5', 'B6']
 const NOTIFICATION_DURATION_MS = 3000
 const NOTIFICATION_CLOSE_ANIMATION_MS = 200
 
@@ -32,7 +32,8 @@ function App() {
     useState<CartNotificationContent | null>(null)
   const [isNotificationClosing, setIsNotificationClosing] = useState(false)
   const [cartGlowTrigger, setCartGlowTrigger] = useState(0)
-  const { data, error, loading, retry } = usePrices(appliedPaperSize)
+  const { data, error, loading, retry, retryDisabled } =
+    usePrices(appliedPaperSize)
   const cart = useCart()
   const selectedPrice = useMemo(
     () =>
@@ -133,6 +134,7 @@ function App() {
           loading={loading}
           error={error}
           onRetry={retry}
+          retryDisabled={retryDisabled}
           selectedCell={selectedCell}
           onSelect={setSelectedCell}
           showAllRows={showAllRows}

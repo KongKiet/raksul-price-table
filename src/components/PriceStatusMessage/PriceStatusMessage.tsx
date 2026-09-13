@@ -1,9 +1,17 @@
 import { type PaperSize } from '../../api/prices'
 import styles from './PriceStatusMessage.module.css'
 
+const RETRY_EXHAUSTED_MESSAGE =
+  'We still could not load prices after several attempts. Please refresh the page or try again later.'
+
 type PriceStatusMessageProps =
   | { status: 'loading'; paperSize: PaperSize }
-  | { status: 'error'; message: string; onRetry: () => void }
+  | {
+      status: 'error'
+      message: string
+      onRetry: () => void
+      retryDisabled?: boolean
+    }
   | { status: 'empty'; paperSize: PaperSize }
 
 export function PriceStatusMessage(props: PriceStatusMessageProps) {
@@ -22,11 +30,14 @@ export function PriceStatusMessage(props: PriceStatusMessageProps) {
     return (
       <div className={styles.state} role="alert">
         <div className={styles.stateContent}>
-          <span>{props.message}</span>
+          <span>
+            {props.retryDisabled ? RETRY_EXHAUSTED_MESSAGE : props.message}
+          </span>
           <button
             className={styles.retryButton}
             type="button"
             onClick={props.onRetry}
+            disabled={props.retryDisabled}
           >
             Retry
           </button>

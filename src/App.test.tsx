@@ -1207,7 +1207,42 @@ describe('App', () => {
     expect(fetchPricesMock).toHaveBeenCalledTimes(2)
   })
 
-  it('offers exactly the four supported paper sizes', () => {
+  it('disables Retry after 5 failed fetch attempts', async () => {
+    const user = userEvent.setup()
+    fetchPricesMock.mockRejectedValue(new Error('network unavailable'))
+
+    render(<App />)
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+
+    // The initial load counts as attempt 1; four more retries reach 5.
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const retryButton = screen.getByRole('button', { name: 'Retry' })
+
+      expect(retryButton).toBeEnabled()
+      await user.click(retryButton)
+      await screen.findByRole('alert')
+    }
+
+    const fourthRetryButton = screen.getByRole('button', { name: 'Retry' })
+
+    expect(fourthRetryButton).toBeEnabled()
+    await user.click(fourthRetryButton)
+    await screen.findByRole('alert')
+
+    const disabledRetryButton = screen.getByRole('button', { name: 'Retry' })
+
+    expect(disabledRetryButton).toBeDisabled()
+    expect(fetchPricesMock).toHaveBeenCalledTimes(5)
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'We still could not load prices after several attempts. Please refresh the page or try again later.',
+    )
+
+    await user.click(disabledRetryButton)
+    expect(fetchPricesMock).toHaveBeenCalledTimes(5)
+  })
+
+  it('offers exactly the five supported paper sizes', () => {
     fetchPricesMock.mockReturnValue(new Promise<PriceResponse>(() => {}))
 
     render(<App />)
@@ -1218,7 +1253,7 @@ describe('App', () => {
       within(selector)
         .getAllByRole('option')
         .map((option) => option.textContent),
-    ).toEqual(['A4', 'A5', 'B4', 'B5'])
+    ).toEqual(['A4', 'A5', 'B4', 'B5', 'B6'])
   })
 
   it('keeps a draft selection separate from the applied table', async () => {

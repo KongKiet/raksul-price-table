@@ -10,6 +10,7 @@ interface PricePanelProps {
   loading: boolean
   error: string | null
   onRetry: () => void
+  retryDisabled: boolean
   selectedCell: PriceCellIdentity | null
   onSelect: (cell: PriceCellIdentity) => void
   showAllRows: boolean
@@ -24,6 +25,7 @@ export function PricePanel({
   loading,
   error,
   onRetry,
+  retryDisabled,
   selectedCell,
   onSelect,
   showAllRows,
@@ -56,7 +58,12 @@ export function PricePanel({
       )}
 
       {!loading && error && (
-        <PriceStatusMessage status="error" message={error} onRetry={onRetry} />
+        <PriceStatusMessage
+          status="error"
+          message={error}
+          onRetry={onRetry}
+          retryDisabled={retryDisabled}
+        />
       )}
 
       {!loading && !error && data && !hasPrices && (

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchPrices, type PaperSize, type PriceResponse } from '../api/prices'
 
 export const PRICE_LOAD_ERROR = 'We could not load prices. Please try again.'
+export const MAX_FETCH_ATTEMPTS = 5
 
 interface PriceRequestState {
   paperSize: PaperSize
@@ -19,7 +20,10 @@ export function usePrices(paperSize: PaperSize) {
     loading: true,
   })
   const latestRequestRef = useRef(0)
+  const failureCountRef = useRef(0)
+  const lastPaperSizeRef = useRef(paperSize)
   const [requestVersion, setRequestVersion] = useState(0)
+  const [retryDisabled, setRetryDisabled] = useState(false)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -27,12 +31,19 @@ export function usePrices(paperSize: PaperSize) {
 
     latestRequestRef.current = requestId
 
+    if (lastPaperSizeRef.current !== paperSize) {
+      lastPaperSizeRef.current = paperSize
+      failureCountRef.current = 0
+    }
+
     void fetchPrices(paperSize, controller.signal)
       .then((data) => {
         if (
           latestRequestRef.current === requestId &&
           !controller.signal.aborted
         ) {
+          failureCountRef.current = 0
+          setRetryDisabled(false)
           setState({
             paperSize,
             data,
@@ -46,6 +57,9 @@ export function usePrices(paperSize: PaperSize) {
           latestRequestRef.current === requestId &&
           !controller.signal.aborted
         ) {
+          failureCountRef.current += 1
+          setRetryDisabled(failureCountRef.current >= MAX_FETCH_ATTEMPTS)
+
           setState({
             paperSize,
             data: null,
@@ -70,6 +84,10 @@ export function usePrices(paperSize: PaperSize) {
   }, [paperSize, requestVersion])
 
   const retry = useCallback(() => {
+    if (failureCountRef.current >= MAX_FETCH_ATTEMPTS) {
+      return
+    }
+
     setState({
       paperSize,
       data: null,
@@ -94,5 +112,6 @@ export function usePrices(paperSize: PaperSize) {
     error: visibleState.error,
     loading: visibleState.loading,
     retry,
+    retryDisabled,
   }
 }

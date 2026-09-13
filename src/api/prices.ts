@@ -1,7 +1,7 @@
 const PRICES_ENDPOINT =
   'https://us-central1-fe-ws-test.cloudfunctions.net/prices'
 
-export type PaperSize = 'A4' | 'A5' | 'B4' | 'B5'
+export type PaperSize = 'A4' | 'A5' | 'B4' | 'B5' | 'B6'
 
 export interface PriceEntry {
   business_day: number
@@ -35,7 +35,8 @@ function parsePaperSize(value: unknown): PaperSize {
     normalized !== 'A4' &&
     normalized !== 'A5' &&
     normalized !== 'B4' &&
-    normalized !== 'B5'
+    normalized !== 'B5' &&
+    normalized !== 'B6'
   ) {
     throw new Error('The price response has an unsupported paper size.')
   }
