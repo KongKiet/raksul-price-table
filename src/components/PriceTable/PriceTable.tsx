@@ -34,12 +34,12 @@ export function PriceTable({
   onShowAllRows,
   onShowLessRows,
 }: PriceTableProps) {
-  const [hoveredCell, setHoveredCell] = useState<PriceCellIdentity | null>(null)
+  const [hoveredQuantity, setHoveredQuantity] = useState<number | null>(null)
   const [renderedPaperSize, setRenderedPaperSize] = useState(paperSize)
 
   if (paperSize !== renderedPaperSize) {
     setRenderedPaperSize(paperSize)
-    setHoveredCell(null)
+    setHoveredQuantity(null)
   }
 
   const availableRows = useMemo(
@@ -50,12 +50,9 @@ export function PriceTable({
   const hasMoreRows = !showAllRows && availableRows.length > rows.length
   const businessDays = useMemo(() => getBusinessDays(prices), [prices])
 
-  function handleHoverEnd(cell: PriceCellIdentity) {
-    setHoveredCell((currentCell) =>
-      currentCell?.quantity === cell.quantity &&
-      currentCell.businessDay === cell.businessDay
-        ? null
-        : currentCell,
+  function handleHoverEnd(quantity: number) {
+    setHoveredQuantity((currentQuantity) =>
+      currentQuantity === quantity ? null : currentQuantity,
     )
   }
 
@@ -82,7 +79,7 @@ export function PriceTable({
           <tbody>
             {rows.map((row) => {
               const quantity = row[0].quantity
-              const isHoveredRow = hoveredCell?.quantity === quantity
+              const isHoveredRow = hoveredQuantity === quantity
               const entriesByBusinessDay = new Map(
                 row.map((entry) => [entry.business_day, entry]),
               )
@@ -92,21 +89,11 @@ export function PriceTable({
                   <th scope="row">{formatPrice(quantity)}</th>
                   {businessDays.map((businessDay) => {
                     const entry = entriesByBusinessDay.get(businessDay)
-                    const isHoveredColumn =
-                      hoveredCell?.businessDay === businessDay
-                    const isHoveredCell =
-                      isHoveredRow && isHoveredColumn && entry !== undefined
-                    const hoverHighlight = isHoveredCell
-                      ? 'strong'
-                      : isHoveredRow || isHoveredColumn
-                        ? 'weak'
-                        : undefined
+                    const hoverHighlight = isHoveredRow ? 'weak' : undefined
                     const hoverClass =
-                      hoverHighlight === 'strong'
-                        ? styles.strongHighlight
-                        : hoverHighlight === 'weak'
-                          ? styles.weakHighlight
-                          : undefined
+                      hoverHighlight === 'weak'
+                        ? styles.weakHighlight
+                        : undefined
 
                     return (
                       <td
@@ -130,12 +117,8 @@ export function PriceTable({
                               selectedCell.businessDay === businessDay
                             }
                             onClick={() => onSelect({ quantity, businessDay })}
-                            onPointerEnter={() =>
-                              setHoveredCell({ quantity, businessDay })
-                            }
-                            onPointerLeave={() =>
-                              handleHoverEnd({ quantity, businessDay })
-                            }
+                            onPointerEnter={() => setHoveredQuantity(quantity)}
+                            onPointerLeave={() => handleHoverEnd(quantity)}
                           >
                             {formatPrice(entry.price)}
                           </button>

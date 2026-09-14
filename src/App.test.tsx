@@ -187,7 +187,7 @@ describe('App', () => {
     expect(fetchPricesMock).toHaveBeenCalledTimes(1)
   })
 
-  it('highlights the hovered price cell strongly and identity-based row/column price cells weakly, excluding headers', async () => {
+  it('highlights the whole hovered row weakly, excluding headers and other rows', async () => {
     fetchPricesMock.mockResolvedValue(createPrices())
 
     render(<App />)
@@ -200,17 +200,15 @@ describe('App', () => {
     const hoveredRow = screen
       .getByRole('rowheader', { name: '10' })
       .closest('tr')
-    const sparseRow = screen
-      .getByRole('rowheader', { name: '20' })
-      .closest('tr')
+    const otherRow = screen.getByRole('rowheader', { name: '20' }).closest('tr')
 
     expect(hoveredCell).not.toBeNull()
     expect(hoveredRow).not.toBeNull()
-    expect(sparseRow).not.toBeNull()
+    expect(otherRow).not.toBeNull()
 
     fireEvent.pointerEnter(hoveredPrice)
 
-    expect(hoveredCell).toHaveAttribute('data-hover-highlight', 'strong')
+    expect(hoveredCell).toHaveAttribute('data-hover-highlight', 'weak')
     expect(
       within(table).getByRole('rowheader', { name: '10' }),
     ).not.toHaveAttribute('data-hover-highlight')
@@ -222,19 +220,14 @@ describe('App', () => {
       hoveredRow as HTMLTableRowElement,
     ).getAllByRole('cell')
     expect(hoveredRowCells[0]).toHaveAttribute('data-hover-highlight', 'weak')
-    expect(hoveredRowCells[1]).toHaveAttribute('data-hover-highlight', 'strong')
+    expect(hoveredRowCells[1]).toHaveAttribute('data-hover-highlight', 'weak')
     expect(hoveredRowCells[2]).toHaveAttribute('data-hover-highlight', 'weak')
 
-    const sparseUnavailableCell = within(
-      sparseRow as HTMLTableRowElement,
-    ).getAllByRole('cell')[1]
-    expect(sparseUnavailableCell).toHaveAttribute(
-      'data-hover-highlight',
-      'weak',
+    const otherRowCells = within(otherRow as HTMLTableRowElement).getAllByRole(
+      'cell',
     )
-    expect(
-      within(sparseUnavailableCell).getByText('Unavailable'),
-    ).toBeInTheDocument()
+    expect(otherRowCells[0]).not.toHaveAttribute('data-hover-highlight')
+    expect(otherRowCells[1]).not.toHaveAttribute('data-hover-highlight')
     expect(
       screen
         .getByRole('rowheader', { name: '40' })
@@ -261,7 +254,7 @@ describe('App', () => {
 
     expect(nextPrice.closest('td')).toHaveAttribute(
       'data-hover-highlight',
-      'strong',
+      'weak',
     )
     expect(
       screen.getByRole('columnheader', { name: '3 business days' }),
@@ -296,7 +289,7 @@ describe('App', () => {
     expect(hoveredPrice).toHaveAttribute('aria-pressed', 'false')
     expect(hoveredPrice.closest('td')).toHaveAttribute(
       'data-hover-highlight',
-      'strong',
+      'weak',
     )
     expect(getOrderPrice()).toHaveTextContent('1,000')
 
@@ -306,7 +299,7 @@ describe('App', () => {
     expect(selectedPrice).toHaveAttribute('aria-pressed', 'true')
     expect(selectedPrice.closest('td')).toHaveAttribute(
       'data-hover-highlight',
-      'strong',
+      'weak',
     )
 
     fireEvent.pointerLeave(selectedPrice)
@@ -333,21 +326,21 @@ describe('App', () => {
 
     expect(expandedPrice.closest('td')).toHaveAttribute(
       'data-hover-highlight',
-      'strong',
+      'weak',
     )
     expect(fetchPricesMock).toHaveBeenCalledTimes(1)
 
     await selectPaperSize(user, 'A5')
     expect(expandedPrice.closest('td')).toHaveAttribute(
       'data-hover-highlight',
-      'strong',
+      'weak',
     )
 
     await selectPaperSize(user, 'A4')
     await user.click(screen.getByRole('button', { name: 'Apply' }))
     expect(expandedPrice.closest('td')).toHaveAttribute(
       'data-hover-highlight',
-      'strong',
+      'weak',
     )
     expect(fetchPricesMock).toHaveBeenCalledTimes(1)
 
@@ -363,7 +356,7 @@ describe('App', () => {
     expect(fetchPricesMock).toHaveBeenCalledTimes(2)
   })
 
-  it('paints the expanded last-row surface with the same weak column state', async () => {
+  it('keeps hover confined to the hovered row, leaving other rows untouched', async () => {
     const user = userEvent.setup()
     fetchPricesMock.mockResolvedValue(createPrices())
 
@@ -380,24 +373,20 @@ describe('App', () => {
     })
     fireEvent.pointerEnter(hoveredPrice)
 
-    expect(hoveredPrice).toHaveAttribute('data-hover-surface', 'strong')
-    expect(lastRowPrice).toHaveAttribute('data-hover-surface', 'weak')
-    expect(lastRowPrice.closest('td')).toHaveAttribute(
+    expect(hoveredPrice).toHaveAttribute('data-hover-surface', 'weak')
+    expect(hoveredPrice.closest('td')).toHaveAttribute(
       'data-hover-highlight',
       'weak',
     )
+    // lastRowPrice shares hoveredPrice's column ("1 business day") but is a
+    // different row, so it must stay untouched — column highlighting is now
+    // pure CSS and out of scope for JS/RTL assertions.
+    expect(lastRowPrice).not.toHaveAttribute('data-hover-surface')
+    expect(lastRowPrice.closest('td')).not.toHaveAttribute(
+      'data-hover-highlight',
+    )
     expect(lastRowPrice).toHaveAttribute('aria-pressed', 'true')
     expect(getOrderPrice()).toHaveTextContent('5,500')
-
-    const weakSurfaces = document.querySelectorAll(
-      '[data-hover-surface="weak"]',
-    )
-    expect(weakSurfaces.length).toBeGreaterThan(0)
-    expect(
-      [...weakSurfaces].every(
-        (surface) => surface.getAttribute('data-hover-surface') === 'weak',
-      ),
-    ).toBe(true)
     expect(fetchPricesMock).toHaveBeenCalledTimes(1)
   })
 

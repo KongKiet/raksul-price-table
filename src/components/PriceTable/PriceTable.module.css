@@ -120,8 +120,32 @@
   background: var(--accent-soft);
 }
 
-.table tbody tr td.strongHighlight,
-.priceButton[data-hover-surface='strong'] {
+/* Column hover highlight — CSS-only via :has(), no JS state.
+   Business-day columns start at nth-child(2) (nth-child(1) is the row header).
+   Extend this list if more than 16 business-day columns are ever needed. */
+.table tbody:has(td:nth-child(2) .priceButton:hover) td:nth-child(2),
+.table tbody:has(td:nth-child(3) .priceButton:hover) td:nth-child(3),
+.table tbody:has(td:nth-child(4) .priceButton:hover) td:nth-child(4),
+.table tbody:has(td:nth-child(5) .priceButton:hover) td:nth-child(5),
+.table tbody:has(td:nth-child(6) .priceButton:hover) td:nth-child(6),
+.table tbody:has(td:nth-child(7) .priceButton:hover) td:nth-child(7),
+.table tbody:has(td:nth-child(8) .priceButton:hover) td:nth-child(8),
+.table tbody:has(td:nth-child(9) .priceButton:hover) td:nth-child(9),
+.table tbody:has(td:nth-child(10) .priceButton:hover) td:nth-child(10),
+.table tbody:has(td:nth-child(11) .priceButton:hover) td:nth-child(11),
+.table tbody:has(td:nth-child(12) .priceButton:hover) td:nth-child(12),
+.table tbody:has(td:nth-child(13) .priceButton:hover) td:nth-child(13),
+.table tbody:has(td:nth-child(14) .priceButton:hover) td:nth-child(14),
+.table tbody:has(td:nth-child(15) .priceButton:hover) td:nth-child(15),
+.table tbody:has(td:nth-child(16) .priceButton:hover) td:nth-child(16),
+.table tbody:has(td:nth-child(17) .priceButton:hover) td:nth-child(17) {
+  background: var(--accent-soft);
+}
+
+/* Exact hovered cell — real :hover, no JS state. The button fills its
+   available td entirely, so its own background paints over any
+   row/column weak highlight underneath. */
+.priceButton:hover {
   background: #cfe1ff;
 }
 
