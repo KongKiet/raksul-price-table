@@ -8,6 +8,10 @@ afterEach(() => {
   // without this, every subsequent test's real-timer-based waits (findBy*,
   // userEvent) would hang until the suite's overall timeout.
   vi.useRealTimers()
+  // The app persists selection state to the URL via history.replaceState,
+  // which otherwise leaks into the next test since jsdom's location isn't
+  // reset between tests.
+  window.history.replaceState(null, '', '/')
 })
 
 // jsdom does not implement HTMLDialogElement.showModal()/close() (see

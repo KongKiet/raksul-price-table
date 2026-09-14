@@ -15,6 +15,7 @@ interface PricePanelProps {
   onSelect: (cell: PriceCellIdentity) => void
   showAllRows: boolean
   onShowAllRows: () => void
+  onShowLessRows: () => void
   selectedPrice: number | undefined
   onAddToCart: () => void
 }
@@ -30,6 +31,7 @@ export function PricePanel({
   onSelect,
   showAllRows,
   onShowAllRows,
+  onShowLessRows,
   selectedPrice,
   onAddToCart,
 }: PricePanelProps) {
@@ -78,6 +80,7 @@ export function PricePanel({
           onSelect={onSelect}
           showAllRows={showAllRows}
           onShowAllRows={onShowAllRows}
+          onShowLessRows={onShowLessRows}
         />
       )}
 

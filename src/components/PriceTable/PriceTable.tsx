@@ -11,6 +11,7 @@ interface PriceTableProps {
   onSelect: (cell: PriceCellIdentity) => void
   showAllRows: boolean
   onShowAllRows: () => void
+  onShowLessRows: () => void
 }
 
 export interface PriceCellIdentity {
@@ -31,6 +32,7 @@ export function PriceTable({
   onSelect,
   showAllRows,
   onShowAllRows,
+  onShowLessRows,
 }: PriceTableProps) {
   const [hoveredCell, setHoveredCell] = useState<PriceCellIdentity | null>(null)
   const [renderedPaperSize, setRenderedPaperSize] = useState(paperSize)
@@ -163,6 +165,18 @@ export function PriceTable({
             onClick={onShowAllRows}
           >
             See more
+          </button>
+        </div>
+      )}
+      {!hasMoreRows && (
+        <div className={styles.seeMore}>
+          <button
+            className={styles.seeMoreButton}
+            type="button"
+            aria-controls="price-table"
+            onClick={onShowLessRows}
+          >
+            See less
           </button>
         </div>
       )}

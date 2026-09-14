@@ -20,11 +20,41 @@ interface CartNotificationContent {
   description: string
 }
 
+function readSelectionFromUrl(): {
+  paperSize: PaperSize
+  selectedCell: PriceCellIdentity | null
+} {
+  const params = new URLSearchParams(window.location.search)
+  const paperSizeParam = params.get('paperSize')
+  const paperSize = (PAPER_SIZES as readonly string[]).includes(
+    paperSizeParam ?? '',
+  )
+    ? (paperSizeParam as PaperSize)
+    : 'A4'
+
+  const quantity = Number(params.get('quantity'))
+  const businessDay = Number(params.get('businessDay'))
+  const selectedCell =
+    Number.isInteger(quantity) &&
+    quantity > 0 &&
+    Number.isInteger(businessDay) &&
+    businessDay > 0
+      ? { quantity, businessDay }
+      : null
+
+  return { paperSize, selectedCell }
+}
+
 function App() {
-  const [draftPaperSize, setDraftPaperSize] = useState<PaperSize>('A4')
-  const [appliedPaperSize, setAppliedPaperSize] = useState<PaperSize>('A4')
+  const [initialSelection] = useState(readSelectionFromUrl)
+  const [draftPaperSize, setDraftPaperSize] = useState<PaperSize>(
+    initialSelection.paperSize,
+  )
+  const [appliedPaperSize, setAppliedPaperSize] = useState<PaperSize>(
+    initialSelection.paperSize,
+  )
   const [selectedCell, setSelectedCell] = useState<PriceCellIdentity | null>(
-    null,
+    initialSelection.selectedCell,
   )
   const [showAllRows, setShowAllRows] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false)
@@ -59,6 +89,22 @@ function App() {
 
     return () => clearTimeout(timeoutId)
   }, [notification])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    params.set('paperSize', appliedPaperSize)
+
+    if (selectedCell) {
+      params.set('quantity', String(selectedCell.quantity))
+      params.set('businessDay', String(selectedCell.businessDay))
+    } else {
+      params.delete('quantity')
+      params.delete('businessDay')
+    }
+
+    const newUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`
+    window.history.replaceState(null, '', newUrl)
+  }, [appliedPaperSize, selectedCell])
 
   useEffect(() => {
     if (!isNotificationClosing) {
@@ -139,6 +185,7 @@ function App() {
           onSelect={setSelectedCell}
           showAllRows={showAllRows}
           onShowAllRows={() => setShowAllRows(true)}
+          onShowLessRows={() => setShowAllRows(false)}
           selectedPrice={selectedPrice}
           onAddToCart={addSelectedCellToCart}
         />
